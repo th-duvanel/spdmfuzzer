@@ -26,6 +26,7 @@ class ExpectSPDMVersionErrorResponse(Expect):
     def process(self, state, msg):
         return
 
+
 """
 This class represents the VERSION message of the server.
 """
@@ -46,6 +47,7 @@ class ExpectSPDMVersionResponse(Expect):
 
     def process(self, state, msg):
         return
+
 
 class ExpectSPDMEmuResponse(Expect):
 
@@ -84,6 +86,8 @@ class ExpectSPDMEmuResponse(Expect):
     def process(self, state, msg):
         print("Processing")
 
+
+
 class ExpectSPDMEmuErrorResponse(ExpectSPDMEmuResponse):
     def __init__(self):
         super().__init__(b'\x00\x00\x00\x01',
@@ -100,22 +104,30 @@ class ExpectSPDMEmuErrorResponse(ExpectSPDMEmuResponse):
     def process(self, state, msg):
         print("Processing")
 
-def sendToResponder(node, command, bufferSize, message):
-    transport_type = b'\x00\x00\x00\x03'
-    size = bufferSize.to_bytes(4, 'big')
-    print(command)
-    node = node.add_child(RawSocketWriteGenerator(command))
-    node = node.add_child(RawSocketWriteGenerator(transport_type))
-    node = node.add_child(RawSocketWriteGenerator(size))
-    node = node.add_child(RawSocketWriteGenerator(message))
+
+
+def sendToResponder(node, message):
+    transport_type = b'\x00\x00\x00\x01'
+
+    xs = bytearray(b'\x00\x00\x00\x01')
+    xs.append(message)
+
+    node = node.add_child(RawSocketWriteGenerator(b'\x00\x00\x00\x01'))
+    node = node.add_child(RawSocketWriteGenerator(xs))
 
     return node
 
+
 def sendInitialMessage(node):
-    return sendToResponder(node,
-                    b'\x00\x00\xde\xad',
-                    14,
-                    b'\x43\x6c\x69\x65\x6e\x74\x20\x48\x65\x6c\x6c\x6f\x21\x00')
+    transport_type = b'\x00\x00\x00\x01'
+    node = node.add_child(RawSocketWriteGenerator(b'\x00\x00\xde\xad'))
+    node = node.add_child(RawSocketWriteGenerator(transport_type))
+    node = node.add_child(RawSocketWriteGenerator(14))
+    node = node.add_child(RawSocketWriteGenerator(b'\x43\x6c\x69\x65\x6e\x74\x20\x48\x65\x6c\x6c\x6f\x21\x00'))
+
+    return node
+
+
 
 def sendGetVersion(node, fuzzedMessage):
     msg = bytearray(5)
@@ -127,26 +139,33 @@ def sendGetVersion(node, fuzzedMessage):
                            5,
                            fuzzedMessage)
 
-# Check if user has passed port number
-if (len(sys.argv) != 2):
-    print("Error: to run this test specify the port number")
-    exit()
 
-# Setting the messages that will be sent
-rightVersionWrongCode = StructuredRandom(vals=[(1, 0x10), (3, None)]).data
-rightMessage = StructuredRandom(vals=[(1, 0x10), (1, 0x84), (2, 0x0)]).data
-wrongVersionRightCode =  StructuredRandom(vals=[(1, None), (1, 0x84), (2, None)]).data
-wrongMessage = StructuredRandom(vals=[(4, None)]).data
-wrongMessageOverflow = StructuredRandom(vals=[(1000, None)]).data
+def main():
+    # Check if user has passed port number
+    if (len(sys.argv) != 2):
+        print("Error: to run this test specify the port number")
+        exit()
 
-root_node = Connect("localhost", int(sys.argv[1]))
-node = root_node
-node = sendInitialMessage(node)
-node = node.add_child(ExpectSPDMEmuResponse(b'\x00\x00\xde\xad',
-                                            14,
-                                            b'\x53\x65\x72\x76\x65\x72\x20\x48\x65\x6c\x6c\x6f\x21\x00'))
-node = sendGetVersion(node, rightMessage)
-node = node.add_child(ExpectSPDMEmuErrorResponse())
+    # Setting the messages that will be sent
+    #rightVersionWrongCode = StructuredRandom(vals=[(1, 0x10), (3, None)]).data
+    #rightMessage = StructuredRandom(vals=[(1, 0x10), (1, 0x84), (2, 0x0)]).data
+    #wrongVersionRightCode =  StructuredRandom(vals=[(1, None), (1, 0x84), (2, None)]).data
+    #wrongMessage = StructuredRandom(vals=[(4, None)]).data
+    #wrongMessageOverflow = StructuredRandom(vals=[(1000, None)]).data
 
-runner = Runner(root_node)
-runner.run()
+
+    root_node = Connect("localhost", int(sys.argv[1]))
+    node      = root_node
+
+
+    node = sendInitialMessage(node)
+
+    #node = node.add_child(ExpectSPDMEmuResponse(b'\x00\x00\xde\xad',
+    #                                            14,
+    #                                            b'\x53\x65\x72\x76\x65\x72\x20\x48\x65\x6c\x6c\x6f\x21\x00'))
+
+    node = sendGetVersion(node, rightMessage)
+    node = node.add_child(ExpectSPDMEmuErrorResponse())
+
+    runner = Runner(root_node)
+    runner.run()

@@ -28,7 +28,8 @@ all:
 	$(MAKE) mbedtls
 	$(MAKE) openssl
 
-	$(MAKE) openspdm_compile
+	$(MAKE) openspdm_tls
+	$(MAKE) tlsfuzzer
 
 	$(MAKE) clean
 
@@ -54,7 +55,7 @@ openssl:
 	mv openssl openspdm/OsStub/OpensslLib
 
 
-openspdm_compile:
+openspdm:
 	@$(MAKE) -C openspdm -f GNUmakefile ARCH=X64 TARGET=DEBUG CRYPTO=MbedTls -e WORKSPACE=.
 	mv ./openspdm/Build/DEBUG_GCC/X64 ./openspdm/Build/DEBUG_GCC/TLS_X64
 
@@ -70,10 +71,14 @@ openspdm_compile:
 	@$(MAKE) -C openspdm -f GNUmakefile ARCH=X64 TARGET=RELEASE CRYPTO=Openssl -e WORKSPACE=.
 	mv ./openspdm/Build/RELEASE_GCC/X64 ./openspdm/Build/RELEASE_GCC/SSL_X64
 
+openspdm_tls:
+	@$(MAKE) -C openspdm -f GNUmakefile ARCH=X64 TARGET=RELEASE CRYPTO=MbedTls -e WORKSPACE=.
+	mv ./openspdm/Build/RELEASE_GCC/X64 ./openspdm/Build/RELEASE_GCC/TLS_X64
+
 
 tlsfuzzer:
 	git clone $(TLSFZZRurl)
-
+	git --git-dir=./tlsfuzzer/.git --work-tree=./tlsfuzzer checkout -b tester $(TLSFZZRhash)
 
 clean:
 	rm -f $(CMOCKAfile) $(MBEDTLSfile) $(OPENSSLfile)

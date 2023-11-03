@@ -1,2 +1,8 @@
 fuzzer-tests/
 tlsfuzzer/
+openspdm/
+
+openspdm
+tlsfuzzer
+
+*.pem
