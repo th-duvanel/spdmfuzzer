@@ -1,0 +1,3 @@
+Execute:
+
+./SpdmDump -r RESPONDER -x -d
