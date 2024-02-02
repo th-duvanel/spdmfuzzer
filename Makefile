@@ -78,7 +78,7 @@ openspdm_tls:
 
 tlsfuzzer:
 	git -C ./Fuzzer clone $(TLSFZZRurl)
-	git --git-dir=./tlsfuzzer/.git --work-tree=./tlsfuzzer checkout -b tester $(TLSFZZRhash)
+	git --git-dir=./Fuzzer/tlsfuzzer/.git --work-tree=./tlsfuzzer checkout -b tester $(TLSFZZRhash)
 
 clean:
 	rm -f $(CMOCKAfile) $(MBEDTLSfile) $(OPENSSLfile)

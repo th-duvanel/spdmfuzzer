@@ -1,6 +1,7 @@
 
 -- Criando um dissector para o protocolo MCTP
-local mctp_protocol = Proto("SPDM-MCTP", "SPDM-MCTP Protocol")
+local mctp_protocol = Proto("SPDM/MCTP", "SPDM over MCTP Protocol")
+
 
 -- Definição dos campos do cabeçalho MCTP
 local fields = mctp_protocol.fields
@@ -17,7 +18,7 @@ fields.parameter_2 = ProtoField.uint8("mctp.parameter_2", "Parameter 2")
 fields.payload = ProtoField.bytes("mctp.payload", "Payload")
 fields.message_integrity_check = ProtoField.uint8("mctp.message_integrity_check", "Message Integrity Check")
 
-
+    
 local function get_bit(byte, position)
     return bit.band(byte, bit.lshift(1, position)) ~= 0
 end
