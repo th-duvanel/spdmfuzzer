@@ -1,6 +1,6 @@
 
-local mctp = Proto("MCTP/TCP", "Management Component Transport Protocol")
-local spdm = Proto("SPDM/MCTP", "Security Protocol Data Model")
+local mctp = Proto("MCTP-TCP", "Management Component Transport Protocol")
+local spdm = Proto("SPDM-MCTP", "Security Protocol Data Model")
 
 -- MCTP --
 
@@ -67,54 +67,49 @@ function mctp.dissector(buffer, pinfo, tree)
 
     pinfo.cols.protocol = mctp.name
 
-    local subtree = tree:add(mctp, buffer(), "MCTP Protocol Data")
+    local subtree_1 = tree:add(mctp, buffer(), "MCTP Protocol Data")
     
-    subtree:add(mctp.fields.physical_header, buffer(0, 4))
+    subtree_1:add(Header, buffer(0, 4))
     if length == 4 then return end
 
-    subtree:add(mctp.fields.reserved_version, buffer(4, 1))
+    subtree_1:add(RSVD, buffer(4, 1))
 
     local header_length = 4
     if length >= header_length + 2 then
         local flags = buffer(header_length, 1):uint()
-        subtree:add(mctp.fields.Dest_ID, buffer(header_length + 1, 1))
-        subtree:add(mctp.fields.Src_ID, buffer(header_length + 2, 1))
+        subtree_1:add(Dest_ID, buffer(header_length + 1, 1))
+        subtree_1:add(Src_ID, buffer(header_length + 2, 1))
 
-        subtree:add(mctp.fields.SOM, buffer(header_length + 3, 1))
-        subtree:add(mctp.fields.EOM, buffer(header_length + 3, 1))
-        subtree:add(mctp.fields.Pkt_SQ, buffer(header_length + 3, 1))
-        subtree:add(mctp.fields.TO, buffer(header_length + 3, 1))
-        subtree:add(mctp.fields.Tag, buffer(header_length + 3, 1))
+        subtree_1:add(SOM, buffer(header_length + 3, 1))
+        subtree_1:add(EOM, buffer(header_length + 3, 1))
+        subtree_1:add(Pkt_SQ, buffer(header_length + 3, 1))
+        subtree_1:add(TO, buffer(header_length + 3, 1))
+        subtree_1:add(Tag, buffer(header_length + 3, 1))
 
-        subtree:add(mctp.fields.IC, buffer(header_length + 4, 1))
-        subtree:add(mctp.fields.message_type, buffer(header_length + 4, 1))
+        subtree_1:add(IC, buffer(header_length + 4, 1))
+        subtree_1:add(Type, buffer(header_length + 4, 1))
 
-        is_spdm = buffer(header_length + 4, 1)
-        if is_spdm == 5 then -- Verificação se é cabeçalho SPDM --
-            spdm.dissector(buffer(header_length + 5), pinfo, subtree)
+        is_spdm = tonumber(buffer(header_length + 4, 1):string())
+
+        if is_spdm == 5 then
+            local subtree_2 = tree:add(spdm, buffer(header_length + 5, length - 9), "SPDM Protocol")
+
+            subtree_2:add(Major, buffer(header_length + 5, 1))
+            subtree_2:add(Minor, buffer(header_length + 5, 1))
+            subtree_2:add(ReqRes, buffer(header_length + 6, 1))
+            subtree_2:add(Param_1, buffer(header_length + 7, 1))
+            subtree_2:add(Param_2, buffer(header_length + 8, 1))
+        
+            local spdm_length = length - 9 - 4
+
+            if spdm_length == 0 then return end
+
+            subtree_2:add(Payload, buffer(header_length + 9, spdm_length))
         end
     end
 end
 
 
-function spdm.dissector(buffer, pinfo, tree)
-    length = buffer:len()
-    if length < 6 then return end
-    
-    pinfo.cols.protocol = spdm.name
-
-    local subtree = tree:add(spdm, buffer(), "SPDM Protocol")
-
-    subtree:add(spdm.fields.Major, buffer(0, 1))
-    subtree:add(spdm.fields.Minor, buffer(0, 1))
-    subtree:add(spdm.fields.ReqRes, buffer(1, 1))
-    subtree:add(spdm.fields.Param_1, buffer(2, 1))
-    subtree:add(spdm.fields.Param_2, buffer(3, 1))
-
-    subtree:add(spdm.fields.Payload, buffer(4, length - 4))
-end
-
-
-
 local tcp_port = DissectorTable.get("tcp.port")
 tcp_port:add(2323, mctp)
+
