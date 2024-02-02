@@ -1,6 +1,7 @@
 
+local spdm = Proto("SPDM", "Security Protocol Data Model")
 local mctp = Proto("MCTP-TCP", "Management Component Transport Protocol")
-local spdm = Proto("SPDM-MCTP", "Security Protocol Data Model")
+
 
 -- MCTP --
 
@@ -43,9 +44,13 @@ mctp.fields = {
 
 -- SPDM --
 
+local reqres_types = {
+    [0x84] = "GET VERSION"
+}
+
 Major      = ProtoField.uint8("Major", "Major Version", base.DEC, NULL, 0xF0)
 Minor      = ProtoField.uint8("Minor", "Minor Version", base.DEC, NULL, 0xF)
-ReqRes     = ProtoField.uint8("ReqRes", "Request Response Code")
+ReqRes     = ProtoField.uint8("ReqRes", "Request Response Code", base.HEX, reqres_types)
 Param_1    = ProtoField.uint8("Param_1", "Parameter 1")
 Param_2    = ProtoField.uint8("Param_2", "Parameter 2")
 
@@ -61,13 +66,13 @@ spdm.fields = {
 }
 
 
-function mctp.dissector(buffer, pinfo, tree)
+function spdm.dissector(buffer, pinfo, tree)
     length = buffer:len()
     if length < 4 then return end -- Verificação de comprimento mínimo do cabeçalho
 
-    pinfo.cols.protocol = mctp.name
+    pinfo.cols.protocol = spdm.name
 
-    local subtree_1 = tree:add(mctp, buffer(), "MCTP Protocol Data")
+    local subtree_1 = tree:add(mctp, buffer(), "Management Component Transport Protocol Data")
     
     subtree_1:add(Header, buffer(0, 4))
     if length == 4 then return end
@@ -89,14 +94,20 @@ function mctp.dissector(buffer, pinfo, tree)
         subtree_1:add(IC, buffer(header_length + 4, 1))
         subtree_1:add(Type, buffer(header_length + 4, 1))
 
-        is_spdm = tonumber(buffer(header_length + 4, 1):string())
-
-        if is_spdm == 5 then
-            local subtree_2 = tree:add(spdm, buffer(header_length + 5, length - 9), "SPDM Protocol")
+        -- checa se mensagem é do tipo SPDM --
+        if buffer(header_length + 4, 1):uint() == 5 then
+            local subtree_2 = tree:add(spdm, buffer(header_length + 5, length - 9), "Security Protocol Data Model)
 
             subtree_2:add(Major, buffer(header_length + 5, 1))
             subtree_2:add(Minor, buffer(header_length + 5, 1))
             subtree_2:add(ReqRes, buffer(header_length + 6, 1))
+
+            local info = buffer(header_length + 6, 1):uint()
+            if info == 0x84 then
+                pinfo.cols.info = "GET VERSION"
+            end
+
+
             subtree_2:add(Param_1, buffer(header_length + 7, 1))
             subtree_2:add(Param_2, buffer(header_length + 8, 1))
         
@@ -111,5 +122,5 @@ end
 
 
 local tcp_port = DissectorTable.get("tcp.port")
-tcp_port:add(2323, mctp)
+tcp_port:add(2323, spdm)
 
