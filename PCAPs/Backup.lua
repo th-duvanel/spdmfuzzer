@@ -117,40 +117,13 @@ Param_2    = ProtoField.uint8("Param_2", "Parameter 2")
 
 Payload    = ProtoField.bytes("Payload", "Payload")
 
-Reserved_V = ProtoField.uint8("Reserved_V", "Reserved Version")
-VNumCount  = ProtoField.uint8("VNumCount", "Version Number Count")
-VNum       = ProtoField.string("VNum", "Version Numbers")
-
-Reserved_GC1 = ProtoField.uint8("Reserved_GC1", "Reserved Get Capabilities")
-CTExp = ProtoField.uint8("CTExp", "CT Expoent")
-Reserved_GC2 = ProtoField.bytes("Reserved_GC2", "Reserved Get Capabilities")
-Flags = ProtoField.bytes("Flags", "Flags")
-TransSize = ProtoField.bytes("TransSize", "Data Transfer Size")
-MaxSize = ProtoField.bytes("MaxSize", "Maximum Mensage Size")
-Sup     = ProtoField.bytes("Sup", "Supported Algorithms")
-
 spdm.fields = {
     Major,
     Minor,
     ReqRes,
     Param_1,
     Param_2,
-    Payload,
-
-    -- Version --
-    Reserved_V,
-    VNumCount,
-    VNum,
-
-
-    -- Get Capabilities --
-    Reserved_GC1,
-    CTExp,
-    Reserved_GC2,
-    Flags,
-    TransSize,
-    MaxSize,
-    Sup
+    Payload
 }
 
 
@@ -194,12 +167,10 @@ function spdm.dissector(buffer, pinfo, tree)
             subtree_2:add(Minor, buffer(header_length + 5, 1))
             subtree_2:add(ReqRes, buffer(header_length + 6, 1))
 
-            local info = buffer(header_length + 6, 1):uint()
-
             subtree_2:add(Param_1, buffer(header_length + 7, 1))
             subtree_2:add(Param_2, buffer(header_length + 8, 1))
 
-            local spdm_length = length - 9 - 4
+            local info = buffer(header_length + 6, 1):uint()
 
             if info == 0x81 then
                 pinfo.cols.info = "Request: GET_DIGESTS"
@@ -209,22 +180,10 @@ function spdm.dissector(buffer, pinfo, tree)
                 pinfo.cols.info = "Request: CHALLENGE"
             elseif info == 0x84 then
                 pinfo.cols.info = "Request: GET_VERSION"
-                return
             elseif info == 0xE0 then
                 pinfo.cols.info = "Request: GET_MEASUREMENTS"
             elseif info == 0xE1 then
                 pinfo.cols.info = "Request: GET_CAPABILITIES"
-
-                local get_cap = subtree_2:add(spdm, buffer(header_length + 9, 8), "Version Message")
-
-                get_cap:add(Reserved_GC1, buffer(header_length + 9, 1))
-                get_cap:add(CTExp, buffer(header_length + 10, 1))
-                get_cap:add(Reserved_GC2, buffer(header_length + 11, 2))
-                get_cap:add(Flags, buffer(header_length + 13, 4))
-                get_cap:add(TransSize, buffer(header_length + 17, 4))
-                get_cap:add(MaxSize, buffer(header_length + 21, 4))
-                get_cap:add(Sup, buffer(header_length + 25, 1))
-
             elseif info == 0xE3 then
                 pinfo.cols.info = "Request: NEGOTIATE_ALGORITHMS"
             elseif info == 0xFF then
@@ -239,24 +198,7 @@ function spdm.dissector(buffer, pinfo, tree)
                 pinfo.cols.info = "Respond: CHALLENGE_AUTH"
             elseif info == 0x04 then
                 pinfo.cols.info = "Respond: VERSION"
-                local n = buffer(header_length + 10, 1):uint()
 
-                local get_ver = subtree_2:add(spdm, buffer(header_length + 9, 2*n + 2), "Version Message")
-                
-                get_ver:add(Reserved_V, buffer(header_length + 9, 1))
-                get_ver:add(VNumCount,  buffer(header_length + 10, 1))
-
-                local versions = ""
-
-                while n ~= 0 do
-                    versions = versions .. buffer(header_length + 11, 2)
-                    if n ~= 1 then
-                        versions = versions .. ", "
-                    end
-                    n = n - 1
-                end
-
-                get_ver:add(VNum, versions)
                 
             elseif info == 0x60 then
                 pinfo.cols.info = "Respond: MEASUREMENTS"
@@ -268,10 +210,8 @@ function spdm.dissector(buffer, pinfo, tree)
                 pinfo.cols.info = "Respond: VENDOR_DEFINED_RESPONSE"
             elseif info == 0x7F then
                 pinfo.cols.info = "Respond: ERROR"
-            else
-                pinfo.cols.info = "Reserved/In development"
             end
-            
+
             local spdm_length = length - 9 - 4
             if spdm_length == 0 then return end
 
