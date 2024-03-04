@@ -46,17 +46,17 @@ mctp.fields = {
 
 local reqres_types = {
         -- Requests --
-        [0x81] = "Request: GET_DIGESTS", 
-        [0x82] = "Request: GET_CERTIFICATE", 
-        [0x83] = "Request: CHALLENGE", 
-        [0x84] = "Request: GET_VERSION", 
+        [0x81] = "Request: GET_DIGESTS", -- 1.0.2
+        [0x82] = "Request: GET_CERTIFICATE", -- 1.0.2
+        [0x83] = "Request: CHALLENGE", -- 1.0.2
+        [0x84] = "Request: GET_VERSION", -- 1.0.2
         [0x85] = "Request: CHUNK_SEND",
         [0x86] = "Request: CHUNK_GET",
         [0x87] = "Request: GET_ENDPOINT_INFO",
-        [0xE0] = "Request: GET_MEASUREMENTS", 
-        [0xE1] = "Request: GET_CAPABILITIES", 
+        [0xE0] = "Request: GET_MEASUREMENTS", -- 1.0.2
+        [0xE1] = "Request: GET_CAPABILITIES", -- 1.0.2
         [0xE2] = "Request: GET_SUPPORTED_EVENT_TYPES",
-        [0xE3] = "Request: NEGOTIATE_ALGORITHMS", 
+        [0xE3] = "Request: NEGOTIATE_ALGORITHMS", -- 1.0.2
         [0xE4] = "Request: KEY_EXCHANGE",
         [0xE5] = "Request: FINISH",
         [0xE6] = "Request: PSK_EXCHANGE",
@@ -73,21 +73,21 @@ local reqres_types = {
         [0xF1] = "Request: SEND_EVENT",
         [0xFC] = "Request: GET_KEY_PAIR_INFO",
         [0xFD] = "Request: SET_KEY_PAIR_INFO",
-        [0xFE] = "Request: VENDOR_DEFINED_REQUEST",
-        [0xFF] = "Request: RESPOND_IF_READY",
+        [0xFE] = "Request: VENDOR_DEFINED_REQUEST",-- 1.0.2
+        [0xFF] = "Request: RESPOND_IF_READY",-- 1.0.2
     
         -- Responses --
-        [0x01] = "Respond: DIGESTS", 
-        [0x02] = "Respond: CERTIFICATE", 
-        [0x03] = "Respond: CHALLENGE_AUTH", 
-        [0x04] = "Respond: VERSION", 
+        [0x01] = "Respond: DIGESTS", -- 1.0.2
+        [0x02] = "Respond: CERTIFICATE", -- 1.0.2
+        [0x03] = "Respond: CHALLENGE_AUTH", -- 1.0.2
+        [0x04] = "Respond: VERSION", -- 1.0.2
         [0x05] = "Respond: CHUNK_SEND_ACK",
         [0x06] = "Respond: CHUNK_RESPONSE",
         [0x07] = "Respond: ENDPOINT_INFO",
-        [0x60] = "Respond: MEASUREMENTS", 
-        [0x61] = "Respond: CAPABILITIES", 
+        [0x60] = "Respond: MEASUREMENTS", -- 1.0.2
+        [0x61] = "Respond: CAPABILITIES", -- 1.0.2
         [0x62] = "Respond: SUPPORTED_EVENT_TYPES",
-        [0x63] = "Respond: ALGORITHMS", 
+        [0x63] = "Respond: ALGORITHMS", -- 1.0.2
         [0x64] = "Respond: KEY_EXCHANGE_RSP",
         [0x65] = "Respond: FINISH_RSP",
         [0x66] = "Respond: PSK_EXCHANGE_RSP",
@@ -104,7 +104,7 @@ local reqres_types = {
         [0x71] = "Respond: EVENT_ACK",
         [0x7C] = "Respond: KEY_PAIR_INFO",
         [0x7D] = "Respond: SET_KEY_PAIR_INFO_ACK",
-        [0x7E] = "Respond: VENDOR_DEFINED_RESPONSE",
+        [0x7E] = "Respond: VENDOR_DEFINED_RESPONSE",-- 1.0.2
         [0x7F] = "Respond: ERROR"
 }
 
@@ -117,17 +117,31 @@ Param_2    = ProtoField.uint8("Param_2", "Parameter 2")
 
 Payload    = ProtoField.bytes("Payload", "Payload")
 
-Reserved_V = ProtoField.uint8("Reserved_V", "Reserved Version")
+Reserved   = ProtoField.uint8("Reserved", "Reserved ")
 VNumCount  = ProtoField.uint8("VNumCount", "Version Number Count")
-VNum       = ProtoField.string("VNum", "Version Numbers")
+MajorV     = ProtoField.uint8("MajorV", "Major Version", base.HEX, NULL, 0xF0)
+MinorV     = ProtoField.uint8("Minorv", "Minor Version", base.HEX, NULL, 0xF)
+UVNum      = ProtoField.uint8("UVNum","Update Version Number", base.HEX, NULL, 0xF0)
+Alpha      = ProtoField.uint8("Alpha", "Alpha", base.HEX, NULL, 0xF)
 
-Reserved_GC1 = ProtoField.uint8("Reserved_GC1", "Reserved Get Capabilities")
 CTExp = ProtoField.uint8("CTExp", "CT Expoent")
-Reserved_GC2 = ProtoField.bytes("Reserved_GC2", "Reserved Get Capabilities")
-Flags = ProtoField.bytes("Flags", "Flags")
-TransSize = ProtoField.bytes("TransSize", "Data Transfer Size")
-MaxSize = ProtoField.bytes("MaxSize", "Maximum Mensage Size")
-Sup     = ProtoField.bytes("Sup", "Supported Algorithms")
+
+local MSCAP = {
+    [0] = "Not Supported",
+    [1] = "Supports, but can't generate signatures",
+    [2] = "Supports",
+    [3] = "Reserved"
+}
+
+CACHE_CAP = ProtoField.uint8("CACHE_CAP", "Supports Negotiated State Caching", base.DEC, yesno_types, 0x1)
+CERT_CAP = ProtoField.uint8("CERT_CAP", "Supports GET_DIGESTS and GET_CERTIFICATE", base.DEC, yesno_types, 0x2)
+CHAL_CAP = ProtoField.uint8("CHAL_CAP", "Supports CHALLANGE message", base.DEC, yesno_types, 0x4)
+MEAS_CAP = ProtoField.uint8("MEAS_CAP", "MEASUREMENT Capabilities", base.DEC, MSCAP, 0x18)
+MEAS_FRESH_CAP = ProtoField.uint8("MEAS_FRESH_CAP", "???", base.DEC, yesno_types, 0x20)
+
+--TransSize = ProtoField.bytes("TransSize", "Data Transfer Size")
+--MaxSize = ProtoField.bytes("MaxSize", "Maximum Mensage Size")
+--Sup     = ProtoField.bytes("Sup", "Supported Algorithms")
 
 spdm.fields = {
     Major,
@@ -138,19 +152,32 @@ spdm.fields = {
     Payload,
 
     -- Version --
-    Reserved_V,
+    Reserved,
     VNumCount,
-    VNum,
+    MajorV,
+    MinorV,
+    UVNum,
+    Alpha,
 
 
     -- Get Capabilities --
-    Reserved_GC1,
+    -- Reserved_GC1,
+    -- CTExp,
+    -- Reserved_GC2,
+    -- Flags,
+    -- TransSize,
+    -- MaxSize,
+    -- Sup
+
+    -- Capabilities --
     CTExp,
-    Reserved_GC2,
-    Flags,
-    TransSize,
-    MaxSize,
-    Sup
+    CACHE_CAP,
+    CERT_CAP,
+    CHAL_CAP,
+    MEAS_CAP,
+    MEAS_FRESH_CAP
+
+
 }
 
 
@@ -201,6 +228,8 @@ function spdm.dissector(buffer, pinfo, tree)
 
             local spdm_length = length - 9 - 4
 
+            local begin = header_length + 9
+
             if info == 0x81 then
                 pinfo.cols.info = "Request: GET_DIGESTS"
             elseif info == 0x82 then
@@ -214,16 +243,16 @@ function spdm.dissector(buffer, pinfo, tree)
                 pinfo.cols.info = "Request: GET_MEASUREMENTS"
             elseif info == 0xE1 then
                 pinfo.cols.info = "Request: GET_CAPABILITIES"
+                return
+                --local get_cap = subtree_2:add(spdm, buffer(begin, 8), "Version Message")
 
-                local get_cap = subtree_2:add(spdm, buffer(header_length + 9, 8), "Version Message")
-
-                get_cap:add(Reserved_GC1, buffer(header_length + 9, 1))
-                get_cap:add(CTExp, buffer(header_length + 10, 1))
-                get_cap:add(Reserved_GC2, buffer(header_length + 11, 2))
-                get_cap:add(Flags, buffer(header_length + 13, 4))
-                get_cap:add(TransSize, buffer(header_length + 17, 4))
-                get_cap:add(MaxSize, buffer(header_length + 21, 4))
-                get_cap:add(Sup, buffer(header_length + 25, 1))
+                --get_cap:add(Reserved, buffer(begin, 1))
+                --get_cap:add(CTExp, buffer(begin + 1, 1))
+                --get_cap:add(Reserved, buffer(begin + 2 2))
+                --get_cap:add(Flags, buffer(begin + 4, 4))
+                --get_cap:add(TransSize, buffer(begin + 8, 4))
+                --get_cap:add(MaxSize, buffer(begin + 12, 4))
+                --get_cap:add(Sup, buffer(begin + 16, 1))
 
             elseif info == 0xE3 then
                 pinfo.cols.info = "Request: NEGOTIATE_ALGORITHMS"
@@ -241,27 +270,50 @@ function spdm.dissector(buffer, pinfo, tree)
                 pinfo.cols.info = "Respond: VERSION"
                 local n = buffer(header_length + 10, 1):uint()
 
-                local get_ver = subtree_2:add(spdm, buffer(header_length + 9, 2*n + 2), "Version Message")
+                local get_ver = subtree_2:add(spdm, buffer(begin, 2*n + 2), "Version Message")
                 
-                get_ver:add(Reserved_V, buffer(header_length + 9, 1))
-                get_ver:add(VNumCount,  buffer(header_length + 10, 1))
+                get_ver:add(Reserved, buffer(begin, 1))
+                get_ver:add(VNumCount,  buffer(begin + 1, 1))
 
-                local versions = ""
+                local i = 0
 
-                while n ~= 0 do
-                    versions = versions .. buffer(header_length + 11, 2)
-                    if n ~= 1 then
-                        versions = versions .. ", "
-                    end
-                    n = n - 1
+                n = n + n
+
+                while i < n do
+                    local ver_num = get_ver:add(spdm, buffer(begin + 2 + i, 2), "Supported Version Number")
+
+                    ver_num:add(MajorV, buffer(begin + 3 + i, 1))
+                    ver_num:add(MinorV, buffer(begin + 3 + i, 1))
+                    ver_num:add(UVNum , buffer(begin + 4 + i, 1))
+                    ver_num:add(Alpha , buffer(begin + 4 + i, 1))
+
+                    i = i + 2
                 end
-
-                get_ver:add(VNum, versions)
                 
             elseif info == 0x60 then
                 pinfo.cols.info = "Respond: MEASUREMENTS"
             elseif info == 0x61 then
                 pinfo.cols.info = "Respond: CAPABILITIES"
+
+                local cap = subtree_2:add(spdm, buffer(begin, 8))
+
+                cap:add(Reserved, buffer(begin, 1))
+                cap:add(CTExp, buffer(begin + 1, 1))
+                cap:add(Reserved, buffer(begin + 2, 2))
+
+                local flags = cap:add(spdm, buffer(begin + 4, 4), "Flags")
+
+                flags:add(CACHE_CAP, buffer(begin + 4, 1))
+                flags:add(CERT_CAP, buffer(begin + 4, 1))
+                flags:add(CHAL_CAP, buffer(begin + 4, 1))
+                flags:add(MEAS_CAP, buffer(begin + 4, 1))
+                flags:add(MEAS_FRESH_CAP, buffer(begin + 4, 1))
+                --flags:add(Reserved, buffer(begin + 4, 1))
+                flags:add(Reserved, buffer(begin + 5, 1))
+                flags:add(Reserved, buffer(begin + 6, 1))
+                flags:add(Reserved, buffer(begin + 7, 1))
+
+
             elseif info == 0x63 then
                 pinfo.cols.info = "Respond: ALGORITHMS"
             elseif info == 0x7E then
@@ -275,7 +327,7 @@ function spdm.dissector(buffer, pinfo, tree)
             local spdm_length = length - 9 - 4
             if spdm_length == 0 then return end
 
-            subtree_2:add(Payload, buffer(header_length + 9, spdm_length))
+            subtree_2:add(Payload, buffer(begin, spdm_length))
         end
     end
 end
