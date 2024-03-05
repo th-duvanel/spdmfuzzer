@@ -117,7 +117,7 @@ Param_2    = ProtoField.uint8("Param_2", "Parameter 2")
 
 Payload    = ProtoField.bytes("Payload", "Payload")
 
-Reserved   = ProtoField.uint8("Reserved", "Reserved ")
+Reserved   = ProtoField.bytes("Reserved", "Reserved ")
 VNumCount  = ProtoField.uint8("VNumCount", "Version Number Count")
 MajorV     = ProtoField.uint8("MajorV", "Major Version", base.HEX, NULL, 0xF0)
 MinorV     = ProtoField.uint8("Minorv", "Minor Version", base.HEX, NULL, 0xF)
@@ -133,11 +133,44 @@ local MSCAP = {
     [3] = "Reserved"
 }
 
+
 CACHE_CAP = ProtoField.uint8("CACHE_CAP", "Supports Negotiated State Caching", base.DEC, yesno_types, 0x1)
 CERT_CAP = ProtoField.uint8("CERT_CAP", "Supports GET_DIGESTS and GET_CERTIFICATE", base.DEC, yesno_types, 0x2)
 CHAL_CAP = ProtoField.uint8("CHAL_CAP", "Supports CHALLANGE message", base.DEC, yesno_types, 0x4)
 MEAS_CAP = ProtoField.uint8("MEAS_CAP", "MEASUREMENT Capabilities", base.DEC, MSCAP, 0x18)
 MEAS_FRESH_CAP = ProtoField.uint8("MEAS_FRESH_CAP", "???", base.DEC, yesno_types, 0x20)
+
+local BSymAlgo = {
+    [1] = "TPM_ALG_RSASSA_2048",
+    [2] = "TPM_ALG_RSAPSS_2048",
+    [4] = "TPM_ALG_RSASSA_3072",
+    [8] = "TPM_ALG_RSAPSS_3072",
+    [16] = "TPM_ALG_ECDSA_ECC_NIST_P256",
+    [32] = "TPM_ALG_RSASSA_4096",
+    [64] = "TPM_ALG_RSAPSS_4096",
+    [128] = "TPM_ALG_ECDSA_ECC_NIST_P384",
+    [256] = "TPM_ALG_ECDSA_ECC_NIST_P521"
+}
+
+local BHshAlgo = {
+    [1] = "TPM_ALG_SHA_256",
+    [2] = "TPM_ALG_SHA_384",
+    [4] = "TPM_ALG_SHA_512",
+    [8] = "TPM_ALG_SHA3_256",
+    [16] = "TPM_ALG_SHA3_384",
+    [32] = "TPM_ALG_SHA3_512"
+}
+
+Length = ProtoField.uint16("Length", "Length of the entire message", base.DEC) 
+MSpecs = ProtoField.uint8("MSpecs", "Measurement Specification")
+SymAlg = ProtoField.uint32("SymAlg", "Supported key signature algorithms", base.DEC, BSymAlgo)
+HshAlg = ProtoField.uint32("HshAlg", "Supported hashing algorithms", base.DEC, BHshAlgo)
+AsyC = ProtoField.uint8("AsyC", "Number of supported key algorithms")
+HshC = ProtoField.uint8("HshC", "Number of supported hashing algorithms")
+Asym = ProtoField.uint32("Asym", "Supported key algorithm")
+Hsh = ProtoField.uint32("Hsh", "Supported hashing algorithm")
+
+MHshAlg = ProtoField.uint32("MHshAlg", "Supported hashing algorithms")
 
 --TransSize = ProtoField.bytes("TransSize", "Data Transfer Size")
 --MaxSize = ProtoField.bytes("MaxSize", "Maximum Mensage Size")
@@ -175,14 +208,30 @@ spdm.fields = {
     CERT_CAP,
     CHAL_CAP,
     MEAS_CAP,
-    MEAS_FRESH_CAP
+    MEAS_FRESH_CAP,
+
+    -- Neg Algorithms --
+    Length,
+    MSpecs,
+    SymAlg,
+    HshAlg,
+    AsyC,
+    HshC,
+    Asym,
+    Hsh,
+
+    -- Algorithms --
+    -- MSpecsSel --
+    MHshAlg
+
+
 
 
 }
 
 
 function spdm.dissector(buffer, pinfo, tree)
-    length = buffer:len()
+    local length = buffer:len()
     if length < 4 then return end -- Verificação de comprimento mínimo do cabeçalho
 
     local subtree_1 = tree:add(mctp, buffer(), "Management Component Transport Protocol Data")
@@ -256,6 +305,40 @@ function spdm.dissector(buffer, pinfo, tree)
 
             elseif info == 0xE3 then
                 pinfo.cols.info = "Request: NEGOTIATE_ALGORITHMS"
+                local n = buffer(begin, 2):uint()
+
+                local neg_alg = subtree_2:add(spdm, buffer(begin, n), "Negotiate Algorithms Message")
+
+                neg_alg:add(Length, buffer(begin, 2))
+                neg_alg:add(MSpecs, buffer(begin + 2, 1))
+                neg_alg:add(Reserved, buffer(begin + 3, 1))
+                
+                neg_alg:add(BSymAlgo, buffer(begin + 4, 4))
+                neg_alg:add(BHshAlgo, buffer(begin + 8, 4))
+                neg_alg:add(Reserved, buffer(begin + 12, 12))
+                
+                neg_alg:add(AsyC, buffer(begin + 24, 1))
+                neg_alg:add(HshC, buffer(begin + 25, 1))
+
+                local A = buffer(begin + 24, 1):uint()
+                local E = buffer(begin + 25, 1):uint()
+
+                neg_alg:add(Reserved, buffer(begin + 26, 2))
+
+                local asymL = neg_alg:add(spdm, buffer(begin + 28, 4*A), "List of Asymmetric Algorithms")
+                local hashL = neg_alg:add(spdm, buffer(begin + 28 + 4*A, 4*E), "List of Hashing Algorithms")
+
+                local i
+
+                for i = 0, 4*A, 4 do
+                    asymL:add(Asym, buffer(begin + 28 + i, 4))
+                end
+
+                for i = 0, 4*E, 4 do
+                    hashL:add(Hsh, buffer(begin + 28 + 4*A + i, 4))
+                end
+
+
             elseif info == 0xFF then
                 pinfo.cols.info = "Request: RESPOND_IF_READY"
             elseif info == 0xFE then
@@ -316,6 +399,47 @@ function spdm.dissector(buffer, pinfo, tree)
 
             elseif info == 0x63 then
                 pinfo.cols.info = "Respond: ALGORITHMS"
+
+                local n = buffer(begin, 2):uint()
+
+                local neg_alg = subtree_2:add(spdm, buffer(begin, n), "Algorithms Message")
+
+                neg_alg:add(Length, buffer(begin, 2))
+                neg_alg:add(MSpecs, buffer(begin + 2, 1))
+                neg_alg:add(Reserved, buffer(begin + 3, 1))
+                neg_alg:add(MHshAlg, buffer(begin + 3, 4))
+                
+                local hash = neg_alg:add(spdm, buffer(begin + 11, 10), "Hashing Algorithms")
+
+                local asym = neg_alg:add(spdm, buffer(begin + 7, 10), "Asymmetric key Algorithms")
+
+
+                asym:add(BSymAlgo, buffer(begin + 7, 4))
+                asym:add(AsyC, buffer(begin + 23, 1))
+                local A = buffer(begin + 23, 1):uint()
+
+                local asym_list = asym:add(spdm, buffer(begin + 27, 4*A), "List")
+                local i = 0
+
+                while i < 4*A do
+                    asym_list:add(Asym, buffer(begin + 27 + i, 4))
+                    i = i + 4
+                end
+
+                hash:add(BHshAlgo, buffer(begin + 12, 4))
+                hash:add(HshC, buffer(begin + 29, 1))
+                local E = buffer(begin + 28, 1):uint()
+
+                local hsh_list = hash:add(spdm, buffer(begin + 27 + 4*A, 4*E))
+                i = 0
+
+                while i < 4*E do
+                    hsh_list:add(Hsh, buffer(begin + 27 + 4*A + i, 4))
+                    i = i + 4
+                end
+
+
+
             elseif info == 0x7E then
                 pinfo.cols.info = "Respond: VENDOR_DEFINED_RESPONSE"
             elseif info == 0x7F then
