@@ -161,7 +161,7 @@ local BHshAlgo = {
     [32] = "TPM_ALG_SHA3_512"
 }
 
-Length = ProtoField.uint16("Length", "Length of the entire message", base.DEC) 
+Length = ProtoField.uint16("Length", "Length", base.DEC) 
 MSpecs = ProtoField.uint8("MSpecs", "Measurement Specification")
 SymAlg = ProtoField.uint32("SymAlg", "Supported key signature algorithms", base.DEC, BSymAlgo)
 HshAlg = ProtoField.uint32("HshAlg", "Supported hashing algorithms", base.DEC, BHshAlgo)
@@ -305,16 +305,16 @@ function spdm.dissector(buffer, pinfo, tree)
 
             elseif info == 0xE3 then
                 pinfo.cols.info = "Request: NEGOTIATE_ALGORITHMS"
-                local n = buffer(begin, 2):uint()
+                local n = buffer(begin, 1):uint()
 
-                local neg_alg = subtree_2:add(spdm, buffer(begin, n), "Negotiate Algorithms Message")
+                local neg_alg = subtree_2:add(spdm, buffer(begin, n - 4), "Negotiate Algorithms Message")
 
-                neg_alg:add(Length, buffer(begin, 2))
+                neg_alg:add(Length, buffer(begin, 1))
                 neg_alg:add(MSpecs, buffer(begin + 2, 1))
                 neg_alg:add(Reserved, buffer(begin + 3, 1))
                 
-                neg_alg:add(BSymAlgo, buffer(begin + 4, 4))
-                neg_alg:add(BHshAlgo, buffer(begin + 8, 4))
+                neg_alg:add(SymAlg, buffer(begin + 4, 4))
+                neg_alg:add(HshAlg, buffer(begin + 8, 4))
                 neg_alg:add(Reserved, buffer(begin + 12, 12))
                 
                 neg_alg:add(AsyC, buffer(begin + 24, 1))
@@ -378,7 +378,7 @@ function spdm.dissector(buffer, pinfo, tree)
             elseif info == 0x61 then
                 pinfo.cols.info = "Respond: CAPABILITIES"
 
-                local cap = subtree_2:add(spdm, buffer(begin, 8))
+                local cap = subtree_2:add(spdm, buffer(begin, 8), "Capabilities Message")
 
                 cap:add(Reserved, buffer(begin, 1))
                 cap:add(CTExp, buffer(begin + 1, 1))
