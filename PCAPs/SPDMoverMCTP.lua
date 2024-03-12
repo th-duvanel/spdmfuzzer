@@ -170,6 +170,11 @@ HshC = ProtoField.uint8("HshC", "Number of supported hashing algorithms")
 Asym = ProtoField.uint32("Asym", "Supported key algorithm")
 Hsh = ProtoField.uint32("Hsh", "Supported hashing algorithm")
 
+AlgType = ProtoField.bytes("AlgType", "Algorithm Type")
+AlgCount = ProtoField.bytes("AlgCount", "Number of supported algorithms")
+AlgSup = ProtoField.bytes("AlgSup", "Supported algorithms")
+AlgExt = ProtoField.bytes("AlgExt", "Extended supported algorithms")
+
 MHshAlg = ProtoField.uint32("MHshAlg", "Supported hashing algorithms")
 
 --TransSize = ProtoField.bytes("TransSize", "Data Transfer Size")
@@ -219,6 +224,11 @@ spdm.fields = {
     HshC,
     Asym,
     Hsh,
+
+    AlgType,
+    AlgCount,
+    AlgSup,
+    AlgExt,
 
     -- Algorithms --
     -- MSpecsSel --
@@ -272,8 +282,11 @@ function spdm.dissector(buffer, pinfo, tree)
 
             local info = buffer(header_length + 6, 1):uint()
 
-            subtree_2:add(Param_1, buffer(header_length + 7, 1))
-            subtree_2:add(Param_2, buffer(header_length + 8, 1))
+            local p1 = buffer(header_length + 7, 1)
+            local p2 = buffer(header_length + 8, 1)
+
+            subtree_2:add(Param_1, p1)
+            subtree_2:add(Param_2, p2)
 
             local spdm_length = length - 9 - 4
 
@@ -305,11 +318,11 @@ function spdm.dissector(buffer, pinfo, tree)
 
             elseif info == 0xE3 then
                 pinfo.cols.info = "Request: NEGOTIATE_ALGORITHMS"
-                local n = buffer(begin, 1):uint()
+                local n = (buffer(begin + 1, 1) .. buffer(begin, 1)):uint()
 
                 local neg_alg = subtree_2:add(spdm, buffer(begin, n - 4), "Negotiate Algorithms Message")
 
-                neg_alg:add(Length, buffer(begin, 1))
+                neg_alg:add(Length, n)
                 neg_alg:add(MSpecs, buffer(begin + 2, 1))
                 neg_alg:add(Reserved, buffer(begin + 3, 1))
                 
@@ -329,15 +342,26 @@ function spdm.dissector(buffer, pinfo, tree)
                 local hashL = neg_alg:add(spdm, buffer(begin + 28 + 4*A, 4*E), "List of Hashing Algorithms")
 
                 local i
+                    
+                if A ~= 0 then
+                    for i = 0, 4*A, 4 do
+                        asymL:add(Asym, buffer(begin + 28 + i, 4))
+                    end
 
-                for i = 0, 4*A, 4 do
-                    asymL:add(Asym, buffer(begin + 28 + i, 4))
+                    for i = 0, 4*E, 4 do
+                        hashL:add(Hsh, buffer(begin + 28 + 4*A + i, 4))
+                    end
                 end
+                
+                local struct_beg = begin + 28 + 4*A + 4*E
 
-                for i = 0, 4*E, 4 do
-                    hashL:add(Hsh, buffer(begin + 28 + 4*A + i, 4))
-                end
+                local eac2 = buffer(begin + 28 + 4*A + 4*E + 1, 1)
 
+                local algoReq = neg_alg:add(spdm, buffer(begin ))
+
+                local alg_struct = neg_alg:add(spdm, buffer(begin + 28 + 4*A + 4*E, p1), "Reserved Algorithms Structure")
+
+                
 
             elseif info == 0xFF then
                 pinfo.cols.info = "Request: RESPOND_IF_READY"
