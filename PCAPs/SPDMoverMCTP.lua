@@ -354,13 +354,32 @@ function spdm.dissector(buffer, pinfo, tree)
                 end
                 
                 local struct_beg = begin + 28 + 4*A + 4*E
+                               
+                local trees = {}
 
-                local eac2 = buffer(begin + 28 + 4*A + 4*E + 1, 1)
+                i = 0
+                local algC = buffer(struct_beg + 1 + i, 1):uint()
 
-                local algoReq = neg_alg:add(spdm, buffer(begin ))
+                do
+                    repeat
+                        local ExtAlgCount = algC and 0b00001111
+                        local FixedAlgCount = algC and 0b11110000
+    
+                        tress[i] = neg_alg:add(spdm, buffer(struct_beg, 4*ExtAlgCount + FixedAlgCount + 2), "Algorithm Request Structure")
+    
+                        trees[i]:add(AlgType, buffer(struct_beg, 1))
+                        trees[i]:add(AlgCount, buffer(struct_beg + 1, 1))
+                        trees[i]:add(AlgSup, buffer(struct_beg + 2, FixedAlgCount))
+                        trees[i]:add(AlgExt, buffer(struct_beg + 2 + FixedAlgCount, 4*ExtAlgCount))
 
-                local alg_struct = neg_alg:add(spdm, buffer(begin + 28 + 4*A + 4*E, p1), "Reserved Algorithms Structure")
+                        i = i + 1
 
+                        if i == p1 then
+                            break
+                        end
+                        algC = buffer(struct_beg + 1 + i*(1 + FixedAlgCount + 4*ExtAlgCount), 1):uint()
+                    until true
+                end
                 
 
             elseif info == 0xFF then
