@@ -118,6 +118,7 @@ local BSymAlgo = {
 
 
 local BHshAlgo = {
+    [0] = "Raw",
     [1] = "TPM_ALG_SHA_256",
     [2] = "TPM_ALG_SHA_384",
     [4] = "TPM_ALG_SHA_512",
@@ -136,12 +137,12 @@ local AlgTypes = {
 
 Length   = ProtoField.uint16("Length", "Length", base.DEC) 
 MSpecs   = ProtoField.uint8("MSpecs", "Measurement Specification")
-SymAlg   = ProtoField.uint32("SymAlg", "Supported key signature algorithms", base.DEC, BSymAlgo)
-HshAlg   = ProtoField.uint32("HshAlg", "Supported hashing algorithms", base.DEC, BHshAlgo)
-AsyC     = ProtoField.uint8("AsyC", "Number of supported key algorithms")
-HshC     = ProtoField.uint8("HshC", "Number of supported hashing algorithms")
-Asym     = ProtoField.uint32("Asym", "Supported key algorithm")
-Hsh      = ProtoField.uint32("Hsh", "Supported hashing algorithm")
+BaseSymAlg   = ProtoField.uint32("BaseSymAlg", "Supported key signature algorithms", base.DEC, BSymAlgo)
+BaseHshAlg   = ProtoField.uint32("BaseHshAlg", "Supported hashing algorithms", base.DEC, BHshAlgo)
+ExtAsyC     = ProtoField.uint8("ExtAsyC", "Number of supported key algorithms")
+ExtHshC     = ProtoField.uint8("ExtHshC", "Number of supported hashing algorithms")
+ExtAsym     = ProtoField.uint32("ExtAsym", "Supported key algorithm")
+ExtHsh      = ProtoField.uint32("ExtHsh", "Supported hashing algorithm")
 
 AlgType  = ProtoField.uint8("AlgType", "Algorithm Type", base.HEX, AlgTypes)
 AlgSup   = ProtoField.bytes("AlgSup", "Supported algorithms")
@@ -149,11 +150,13 @@ AlgExt   = ProtoField.bytes("AlgExt", "Extended supported algorithms")
 EAlgCount = ProtoField.uint8("ExtAlgCount", "Number of extended supported algorithms", base.DEC, NULL, 15)
 FAlgCount = ProtoField.uint8("FixedAlgCount", "Number of fixed supported algorithms", base.DEC, NULL, 240)
 
-MHshAlg = ProtoField.uint32("MHshAlg", "Supported hashing algorithms")
+MHshAlg = ProtoField.uint8("MHshAlg", "Bit mask for supported hashing algorithms", base.DEC, BHshAlgo)
+BaseSymSel = ProtoField.uint32("BaseSymSel", "Selected key signature algorithm", base.DEC, BSymAlgo)
+BaseHshSel = ProtoField.uint32("BaseHshSel", "Selected hashing algorithm", base.DEC, BHshAlgo)
+ExtAsySelC = ProtoField.uint8("ExtAsySelC", "Number of selected key algorithms")
+ExtHshSelC = ProtoField.uint8("ExtHshSelC", "Number of selected hashing algorithms")
 
---TransSize = ProtoField.bytes("TransSize", "Data Transfer Size")
---MaxSize = ProtoField.bytes("MaxSize", "Maximum Mensage Size")
---Sup     = ProtoField.bytes("Sup", "Supported Algorithms")
+
 
 spdm.fields = {
     Major,
@@ -192,12 +195,12 @@ spdm.fields = {
     -- Neg Algorithms --
     Length,
     MSpecs,
-    SymAlg,
-    HshAlg,
-    AsyC,
-    HshC,
-    Asym,
-    Hsh,
+    BaseSymAlg,
+    BaseHshAlg,
+    ExtAsyC,
+    ExtHshC,
+    ExtAsym,
+    ExtHsh,
 
     AlgType,
     AlgSup,
@@ -207,7 +210,11 @@ spdm.fields = {
 
     -- Algorithms --
     -- MSpecsSel --
-    MHshAlg
+    MHshAlg,
+    BaseSymSel,
+    BaseHshSel,
+    ExtAsySelC,
+    ExtHshSelC
 
 
 
@@ -294,12 +301,12 @@ function spdm.dissector(buffer, pinfo, tree)
                 neg_alg:add(MSpecs, buffer(begin + 2, 1))
                 neg_alg:add(Reserved, buffer(begin + 3, 1))
                 
-                neg_alg:add(SymAlg, buffer(begin + 4, 4))
-                neg_alg:add(HshAlg, buffer(begin + 8, 4))
+                neg_alg:add(BaseSymAlg, buffer(begin + 4, 4))
+                neg_alg:add(BaseHshAlg, buffer(begin + 8, 4))
                 neg_alg:add(Reserved, buffer(begin + 12, 12))
                 
-                neg_alg:add(AsyC, buffer(begin + 24, 1))
-                neg_alg:add(HshC, buffer(begin + 25, 1))
+                neg_alg:add(ExtAsyC, buffer(begin + 24, 1))
+                neg_alg:add(ExtHshC, buffer(begin + 25, 1))
 
                 local A = buffer(begin + 24, 1):uint()
                 local E = buffer(begin + 25, 1):uint()
@@ -313,11 +320,11 @@ function spdm.dissector(buffer, pinfo, tree)
                     
                 if A ~= 0 then
                     for i = 0, 4*A, 4 do
-                        asymL:add(Asym, buffer(begin + 28 + i, 4))
+                        asymL:add(ExtAsym, buffer(begin + 28 + i, 4))
                     end
 
                     for i = 0, 4*E, 4 do
-                        hashL:add(Hsh, buffer(begin + 28 + 4*A + i, 4))
+                        hashL:add(ExtHsh, buffer(begin + 28 + 4*A + i, 4))
                     end
                 end
                 
@@ -417,15 +424,15 @@ function spdm.dissector(buffer, pinfo, tree)
                 alg:add(Length, n)
                 alg:add(MSpecs, buffer(begin + 2, 1))
                 alg:add(Reserved, buffer(begin + 3, 1))
-                alg:add(MHshAlg, buffer(begin + 4, 4))
+                alg:add(MHshAlg, buffer(begin + 4, 1))
                 
                 
-                alg:add(SymAlg, buffer(begin + 8, 4))
-                alg:add(HshAlg, buffer(begin + 12, 4))
+                alg:add(BaseSymSel, buffer(begin + 8, 4))
+                alg:add(BaseHshSel, buffer(begin + 12, 4))
                 alg:add(Reserved, buffer(begin + 16, 12))
                 
-                alg:add(AsyC, buffer(begin + 28, 1))
-                alg:add(HshC, buffer(begin + 29, 1))
+                alg:add(ExtAsySelC, buffer(begin + 28, 1))
+                alg:add(ExtHshSelC, buffer(begin + 29, 1))
 
                 local A = buffer(begin + 28, 1):uint()
                 local E = buffer(begin + 29, 1):uint()
@@ -439,11 +446,11 @@ function spdm.dissector(buffer, pinfo, tree)
                     
                 if A ~= 0 then
                     for i = 0, 4*A, 4 do
-                        asymL:add(Asym, buffer(begin + 32 + i, 4))
+                        asymL:add(ExtAsym, buffer(begin + 32 + i, 4))
                     end
 
                     for i = 0, 4*E, 4 do
-                        hashL:add(Hsh, buffer(begin + 36 + 4*A + i, 4))
+                        hashL:add(ExtHsh, buffer(begin + 36 + 4*A + i, 4))
                     end
                 end
                 
