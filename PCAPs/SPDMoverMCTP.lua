@@ -1,30 +1,6 @@
-
-local spdm = Proto("SPDM", "Security Protocol Data Model")
-local mctp = Proto("MCTP-TCP", "Management Component Transport Protocol")
-
-
 -- MCTP --
 
-Header      = ProtoField.bytes("Header", "Physical Medium-Specific Header")
-RSVD        = ProtoField.uint8("RSVD", "Reserved", base.DEC, NULL, 0xF)
-HDR_Version = ProtoField.uint8("HDR_Version", "Header Version", base.DEC, NULL, 0xF0)
-Dest_ID     = ProtoField.uint8("Dest_ID", "Destination ID")
-Src_ID      = ProtoField.uint8("Src_ID", "Source ID")
-
-
-local yesno_types = {
-    [0] = "No",
-    [1] = "Yes"
-}
-
-SOM         = ProtoField.uint8("SOM", "First Packet", base.DEC, yesno_types, 0x1)
-EOM         = ProtoField.uint8("EOM", "Last Packet", base.DEC, yesno_types, 0x2)
-Pkt_SQ      = ProtoField.uint8("Pkt_SQ", "Packet sequence numer", base.DEC, NULL, 0xC)
-TO          = ProtoField.uint8("TO", "Tag Owner", base.DEC, yesno_types, 0x10)
-Tag         = ProtoField.uint8("Tag", "Message Tag", base.DEC, NULL, 0xE0)
-
-IC          = ProtoField.uint8("IC", "Check bit", base.DEC, yesno_types, 0x80)
-Type        = ProtoField.uint8("Type", "Message Type", base.DEC, NULL, 0x7F)
+local mctp = Proto("MCTP-TCP", "Management Component Transport Protocol")
 
 mctp.fields = {
     Header,
@@ -41,8 +17,93 @@ mctp.fields = {
     Type
 }
 
+local yesno_types = {
+    [0] = "No",
+    [1] = "Yes"
+}
+
+
+Header      = ProtoField.bytes("Header", "Physical Medium-Specific Header")
+RSVD        = ProtoField.uint8("RSVD", "Reserved", base.DEC, NULL, 0xF)
+HDR_Version = ProtoField.uint8("HDR_Version", "Header Version", base.DEC, NULL, 0xF0)
+Dest_ID     = ProtoField.uint8("Dest_ID", "Destination ID")
+Src_ID      = ProtoField.uint8("Src_ID", "Source ID")
+SOM         = ProtoField.uint8("SOM", "First Packet", base.DEC, yesno_types, 0x1)
+EOM         = ProtoField.uint8("EOM", "Last Packet", base.DEC, yesno_types, 0x2)
+Pkt_SQ      = ProtoField.uint8("Pkt_SQ", "Packet sequence numer", base.DEC, NULL, 0xC)
+TO          = ProtoField.uint8("TO", "Tag Owner", base.DEC, yesno_types, 0x10)
+Tag         = ProtoField.uint8("Tag", "Message Tag", base.DEC, NULL, 0xE0)
+IC          = ProtoField.uint8("IC", "Check bit", base.DEC, yesno_types, 0x80)
+Type        = ProtoField.uint8("Type", "Message Type", base.DEC, NULL, 0x7F)
+
 
 -- SPDM --
+
+local spdm = Proto("SPDM", "Security Protocol Data Model")
+
+spdm.fields = {
+    Major,
+    Minor,
+    ReqRes,
+    Param1,
+    Param2,
+    Payload,
+
+    -- Version --
+    Reserved,
+    VNumCount,
+    MajorV,
+    MinorV,
+    UVNum,
+    Alpha,
+
+
+    -- Get Capabilities --
+    -- Reserved_GC1,
+    -- CTExp,
+    -- Reserved_GC2,
+    -- Flags,
+    -- TransSize,
+    -- MaxSize,
+    -- Sup
+
+    -- Capabilities --
+    CTExp,
+    CACHE_CAP,
+    CERT_CAP,
+    CHAL_CAP,
+    MEAS_CAP,
+    MEAS_FRESH_CAP,
+
+    -- Neg Algorithms --
+    Length,
+    MSpecs,
+    BaseSymAlg,
+    BaseHshAlg,
+    ExtAsyC,
+    ExtHshC,
+    ExtAsym,
+    ExtHsh,
+
+    AlgType,
+    AlgSup,
+    AlgExt,
+    EAlgCount,
+    FAlgCount,
+
+    -- Algorithms --
+    -- MSpecsSel --
+    MHshAlg,
+    BaseSymSel,
+    BaseHshSel,
+    ExtAsySelC,
+    ExtHshSelC
+
+
+
+
+}
+
 
 local reqres_types = {
         -- Requests --
@@ -156,70 +217,6 @@ BaseHshSel = ProtoField.uint32("BaseHshSel", "Selected hashing algorithm", base.
 ExtAsySelC = ProtoField.uint8("ExtAsySelC", "Number of selected key algorithms")
 ExtHshSelC = ProtoField.uint8("ExtHshSelC", "Number of selected hashing algorithms")
 
-
-
-spdm.fields = {
-    Major,
-    Minor,
-    ReqRes,
-    Param1,
-    Param2,
-    Payload,
-
-    -- Version --
-    Reserved,
-    VNumCount,
-    MajorV,
-    MinorV,
-    UVNum,
-    Alpha,
-
-
-    -- Get Capabilities --
-    -- Reserved_GC1,
-    -- CTExp,
-    -- Reserved_GC2,
-    -- Flags,
-    -- TransSize,
-    -- MaxSize,
-    -- Sup
-
-    -- Capabilities --
-    CTExp,
-    CACHE_CAP,
-    CERT_CAP,
-    CHAL_CAP,
-    MEAS_CAP,
-    MEAS_FRESH_CAP,
-
-    -- Neg Algorithms --
-    Length,
-    MSpecs,
-    BaseSymAlg,
-    BaseHshAlg,
-    ExtAsyC,
-    ExtHshC,
-    ExtAsym,
-    ExtHsh,
-
-    AlgType,
-    AlgSup,
-    AlgExt,
-    EAlgCount,
-    FAlgCount,
-
-    -- Algorithms --
-    -- MSpecsSel --
-    MHshAlg,
-    BaseSymSel,
-    BaseHshSel,
-    ExtAsySelC,
-    ExtHshSelC
-
-
-
-
-}
 
 
 function spdm.dissector(buffer, pinfo, tree)
