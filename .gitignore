@@ -1,9 +1,0 @@
-fuzzer-tests/
-tlsfuzzer/
-Fuzzer/tlsfuzzer
-openspdm/
-
-openspdm
-tlsfuzzer
-
-*.pem
