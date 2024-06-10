@@ -1,4 +1,1 @@
-*
-!compile.sh
-!files
-!.gitignore
+/spdm-emu/
