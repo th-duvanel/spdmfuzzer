@@ -24,7 +24,7 @@ mv openssl* ./openspdm/OsStub/OpensslLib/openssl
 mv mbedtls* ./openspdm/OsStub/MbedTlsLib/mbedtls
 mv cmocka* ./openspdm/UnitTest/CmockaLib/cmocka
 
-cp -r ./files/openspdm/ ./openspdm/ 
+cp -r ./files/openspdm/OsTest/* ./openspdm/OsTest/
 
 cd openspdm
 awk '/TOOLCHAIN STREQUAL "GCC"/,/SET(CMAKE_C_LINK_EXECUTABLE)/ { gsub("-Werror", "-Wno-error=unused-but-set-variable"); } { print }' CMakeLists.txt | sponge CMakeLists.txt
