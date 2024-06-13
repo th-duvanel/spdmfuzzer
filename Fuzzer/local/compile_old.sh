@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# This is a script for compilling an older SPDM version.
-# This is the 14/Dec/2020 version, from openspdm.
+# A script for compilling an older SPDM version.
+# This is the 16/Dec/2020 version, without GET_MEASUREMENTS 
+# fix, from openspdm. Includes the testing emulator which
+# uses transport headers.
 
 git clone https://github.com/jyao1/openspdm
 cd openspdm
-git checkout bc1be2b474860c3935e03e5d3444865b8f46760a
+git checkout 5c45f11354a5d77e399caf693fa2f66a38beccac
 
 cd ..
 wget https://www.openssl.org/source/openssl-1.1.1g.tar.gz
