@@ -1,0 +1,91 @@
+From 933b63adb730b087e48e0679923372afd8b02515 Mon Sep 17 00:00:00 2001
+From: ralves <myeyeismadeofglass@gmail.com>
+Date: Thu, 5 Aug 2021 15:10:04 -0300
+Subject: [PATCH 1/4] Add BUIDROOT toolchain
+
+---
+ CMakeLists.txt | 44 ++++++++++++++++++++++++++++++++------------
+ 1 file changed, 32 insertions(+), 12 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0071338..2b9b321 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -45,6 +45,8 @@ endif()
+ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+     if(TOOLCHAIN STREQUAL "GCC")
+         MESSAGE("TOOLCHAIN = GCC")
++    elseif(TOOLCHAIN STREQUAL "BUILDROOT")
++        MESSAGE("TOOLCHAIN = BUILDROOT")
+     elseif(TOOLCHAIN STREQUAL "CLANG")
+         MESSAGE("TOOLCHAIN = CLANG")
+     elseif(TOOLCHAIN STREQUAL "CBMC")
+@@ -148,6 +150,20 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 
+         SET(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <OBJECTS> -o <TARGET> -Wl,--start-group <LINK_LIBRARIES> -Wl,--end-group")
+ 
++    elseif(TOOLCHAIN STREQUAL "BUILDROOT")
++        SET(CMAKE_C_COMPILER x86_64-buildroot-linux-uclibc-gcc)
++        SET(CMAKE_C_FLAGS "-D__KERNEL__ -Wall  -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -fshort-wchar  -Wno-format-security -std=gnu89 -fno-PIE -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -m64 -falign-jumps=1 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_FXSAVEQ=1 -DCONFIG_AS_SSSE3=1 -DCONFIG_AS_CRC32=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -DCONFIG_AS_AVX512=1 -DCONFIG_AS_SHA1_NI=1 -DCONFIG_AS_SHA256_NI=1  -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mindirect-branch=thunk-extern -mindirect-branch-register -fno-jump-tables -fno-delete-null-pointer-checks -O2 --param=allow-store-data-races=0 -Wframe-larger-than=2048 -fno-stack-protector -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fno-merge-all-constants -fmerge-constants -fno-stack-check -fconserve-stack -Werror=implicit-int -Werror=strict-prototypes -Werror=date-time -Werror=incompatible-pointer-types -Werror=designated-init ")
++        SET(MBEDTLS_FLAGS "")
++        SET(OPENSSL_FLAGS "-include base.h -Wno-error=maybe-uninitialized -Wno-error=format -Wno-format -Wno-error=unused-but-set-variable")
++        SET(CMOCKA_FLAGS "-std=gnu99 -Wpedantic -Wall -Wshadow -Wmissing-prototypes -Wcast-align -Werror=address -Wstrict-prototypes -Werror=strict-prototypes -Wwrite-strings -Werror=write-strings -Werror-implicit-function-declaration -Wpointer-arith -Werror=pointer-arith -Wdeclaration-after-statement -Werror=declaration-after-statement -Wreturn-type -Werror=return-type -Wuninitialized -Werror=uninitialized -Werror=strict-overflow -Wstrict-overflow=2 -Wno-format-zero-length -Wmissing-field-initializers -Wformat-security -Werror=format-security -fno-common -Wformat -fno-common -mcmodel=kernel -static -fno-common -fno-exceptions -fno-non-call-exceptions")
++
++        SET(CMAKE_AR x86_64-buildroot-linux-uclibc-gcc-ar)
++
++        SET(CMAKE_LINKER x86_64-buildroot-linux-uclibc-gcc)
++        SET(CMAKE_EXE_LINKER_FLAGS " -Wno-error -mcmodel=kernel " )
++
++        SET(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> <OBJECTS> -o <TARGET> -Wl,--start-group <LINK_LIBRARIES> -Wl,--end-group")
++
+     elseif(TOOLCHAIN STREQUAL "ARM_GCC")
+         SET(CMAKE_C_COMPILER arm-linux-gnueabi-gcc)
+         SET(CMAKE_C_FLAGS "-g -fshort-wchar -fno-strict-aliasing -Wall -Werror -Wno-array-bounds -ffunction-sections -fdata-sections -fno-common -Wno-address -fpie -fno-asynchronous-unwind-tables -flto -DUSING_LTO -Wno-switch -Wno-maybe-uninitialized -Wno-uninitialized  -Wno-builtin-declaration-mismatch -Wno-nonnull-compare --coverage -fprofile-arcs -ftest-coverage")
+@@ -308,7 +324,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+     endif()
+ 
+     if(ARCH STREQUAL "x64")
+-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -mcmodel=small")
++        if(NOT TOOLCHAIN STREQUAL "BUILDROOT")
++            SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64 -mcmodel=small")
++        endif()
+     elseif(ARCH STREQUAL "ia32")
+         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+     endif()
+@@ -479,20 +497,22 @@ endif()
+     ADD_SUBDIRECTORY(os_stub/malloclib)
+     ADD_SUBDIRECTORY(os_stub/spdm_device_secret_lib)
+     ADD_SUBDIRECTORY(os_stub/spdm_device_secret_lib_null)
+-    ADD_SUBDIRECTORY(unit_test/spdm_transport_test_lib)
+-    ADD_SUBDIRECTORY(unit_test/cmockalib)
++    if(NOT TOOLCHAIN STREQUAL "BUILDROOT")
++       ADD_SUBDIRECTORY(unit_test/spdm_transport_test_lib)
++       ADD_SUBDIRECTORY(unit_test/cmockalib)
+ 
+-    ADD_SUBDIRECTORY(unit_test/test_spdm_requester)
+-    ADD_SUBDIRECTORY(unit_test/test_spdm_responder)
+-    ADD_SUBDIRECTORY(unit_test/test_crypt)
++        ADD_SUBDIRECTORY(unit_test/test_spdm_requester)
++        ADD_SUBDIRECTORY(unit_test/test_spdm_responder)
++        ADD_SUBDIRECTORY(unit_test/test_crypt)
+ 
+-    ADD_SUBDIRECTORY(unit_test/fuzzing/test_spdm_requester_get_version)
+-    ADD_SUBDIRECTORY(unit_test/fuzzing/test_spdm_responder_version)
++        ADD_SUBDIRECTORY(unit_test/fuzzing/test_spdm_requester_get_version)
++        ADD_SUBDIRECTORY(unit_test/fuzzing/test_spdm_responder_version)
+ 
+-    ADD_SUBDIRECTORY(unit_test/test_size/cryptlib_dummy)
+-    ADD_SUBDIRECTORY(unit_test/test_size/cryptstublib_dummy)
+-    ADD_SUBDIRECTORY(unit_test/test_size/intrinsiclib)
+-    ADD_SUBDIRECTORY(unit_test/test_size/malloclib_null)
++        ADD_SUBDIRECTORY(unit_test/test_size/cryptlib_dummy)
++        ADD_SUBDIRECTORY(unit_test/test_size/cryptstublib_dummy)
++        ADD_SUBDIRECTORY(unit_test/test_size/intrinsiclib)
++        ADD_SUBDIRECTORY(unit_test/test_size/malloclib_null)
++    endif()
+ 
+ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+     if(ARCH STREQUAL "x64")
+-- 
+2.17.5
+
