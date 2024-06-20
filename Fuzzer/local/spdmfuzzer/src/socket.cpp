@@ -45,54 +45,59 @@ TCP::acceptRequester()
     fuzzerConsole("Requester (client) connected");
 }
 
-void 
+bool
 TCP::responderRead(u32* command, u32* ttype, u32* size, void* buffer)
 {
-    if (read(req_sckt, command, COMMAND) < 0) {
-        fuzzerError("Socket \"Command\" read failed", 1);
-    }
-    if (assertEnd(*command)) return;
-    
-    if (read(req_sckt, ttype, TTYPE) < 0) {
-        fuzzerError("Socket \"TransportType\" read failed", 1);
-    }
-    if (read(req_sckt, size, SIZE) < 0) {
-        fuzzerError("Socket \"Size\" read failed", 1);
-    }
-    if (*size && read(req_sckt, buffer, *size) < 0) {
-        fuzzerError("Socket \"Buffer\" read failed", 1);
-    }
+    ssize_t ret;
 
+    if ((ret = read(req_sckt, command, COMMAND)) <= 0) {
+        return checkSocketErrors(ret, COMMAND, "Command");
+    }
+    if (assertEnd(*command)) return false;
+    
+    if ((ret = read(req_sckt, ttype, TTYPE)) <= 0) {
+        return checkSocketErrors(ret, TTYPE, "TransportType");
+    }
+    if ((ret = read(req_sckt, size, SIZE)) <= 0) {
+        return checkSocketErrors(ret, SIZE, "Size");
+    }
+    if (*size && (ret = read(req_sckt, buffer, *size)) <= 0) {
+        return checkSocketErrors(ret, *size, "Buffer");
+    }
     std::cout << ENDL;
     fuzzerConsole("Received command: ", command, COMMAND);
     fuzzerConsole("Received transport type: ", ttype, TTYPE);
     fuzzerConsole("Received buffer size: ", size, SIZE);
     fuzzerConsole("Received buffer: ", buffer, ntohl(*size));
+    return true;
 }
 
-void
+bool
 TCP::responderWrite(u32 command, u32 ttype, u32 size, void* buffer)
 {
+    ssize_t ret;
     size = htonl(size);
+    ttype = htonl(ttype);
+    command = htonl(command);
 
-    if (write(req_sckt, &command, COMMAND) < 0) {
-        fuzzerError("Socket \"Command\" write failed", 1);
+    if ((ret = write(req_sckt, &command, COMMAND)) <= 0) {
+        return checkSocketErrors(ret, COMMAND, "Command");
     }
-    if (write(req_sckt, &ttype, TTYPE) < 0) {
-        fuzzerError("Socket \"TransportType\" write failed", 1);
+    if ((ret = write(req_sckt, &ttype, TTYPE)) <= 0) {
+        return checkSocketErrors(ret, TTYPE, "TransportType");
     }
-    if (write(req_sckt, &size, SIZE) < 0) {
-        fuzzerError("Socket \"Size\" write failed", 1);
+    if ((ret = write(req_sckt, &size, SIZE)) <= 0) {
+        return checkSocketErrors(ret, SIZE, "Size");
     }
-    if (size && write(req_sckt, buffer, ntohl(size)) < 0) {
-        fuzzerError("Socket \"Buffer\" write failed", 1);
+    if (size && (ret = write(req_sckt, buffer, ntohl(size))) <= 0) {
+        return checkSocketErrors(ret, ntohl(size), "Buffer");
     }
-
     std::cout << ENDL;
     fuzzerConsole("Sent command: ", &command, COMMAND);
     fuzzerConsole("Sent transport type: ", &ttype, TTYPE);
     fuzzerConsole("Sent buffer size: ", &size, SIZE);
     fuzzerConsole("Sent buffer: ", buffer, ntohl(size));
+    return true;
 }
 
 void
@@ -101,7 +106,8 @@ TCP::responderDisconnect()
     //responderWrite(finishCommand, headerMCTP, 0, nullptr);
     close(req_sckt);
     req_sckt = -1;
-    fuzzerConsole("Requester (client) disconnected");
+    std::cout << ENDL;
+    fuzzerConsole("Requester (client) disconnected", '!');
 }
 
 bool
@@ -119,4 +125,14 @@ TCP::assertEnd(u32 command)
         return true;
     }
     return false;
+}
+
+bool
+TCP::checkSocketErrors(ssize_t ret, size_t expected, const std::string type)
+{
+    if (ret == 0 || ret < 0) {
+        fuzzerError("Socket " + type + " read/write connection closed", 1);
+        return false;
+    }
+    return true;
 }

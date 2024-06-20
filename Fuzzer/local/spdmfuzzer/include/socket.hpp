@@ -9,11 +9,13 @@
 
 #define VERSION 11
 
+
+
 class Socket {
 public:
-    virtual void responderRead(u32* command, u32* ttype, u32* size, void* buffer) = 0;
+    virtual bool responderRead(u32* command, u32* ttype, u32* size, void* buffer) = 0;
 
-    virtual void responderWrite(u32 command, u32 ttype, u32 size, void* buffer) = 0;
+    virtual bool responderWrite(u32 command, u32 ttype, u32 size, void* buffer) = 0;
 
     virtual void responderDisconnect() = 0;
 
@@ -32,6 +34,8 @@ private:
 
     bool assertEnd(u32 command);
 
+    bool checkSocketErrors(ssize_t ret, size_t expected, const std::string type);
+
 public:
     TCP(int port);
 
@@ -39,9 +43,9 @@ public:
 
     ~TCP();
 
-    void responderRead(u32* command, u32* ttype, u32* size, void* buffer) override;
+    bool responderRead(u32* command, u32* ttype, u32* size, void* buffer) override;
 
-    void responderWrite(u32 command, u32 ttype, u32 size, void* buffer) override;
+    bool responderWrite(u32 command, u32 ttype, u32 size, void* buffer) override;
 
     void responderDisconnect() override;
 
