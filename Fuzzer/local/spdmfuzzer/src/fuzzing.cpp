@@ -40,15 +40,15 @@ bool Fuzzer::assertRequest()
 {
     u8* castedBuffer = static_cast<u8*>(buffer);
 
-    if (!socket->checkConnection()) return false;
+    if (!socket->checkConnection()) startRequester();
+    if (!socket->responderRead(&command, &ttype, &size, buffer)) return false;
 
-    for (size_t i = 0 ; i < size ; i++) {
+    for (size_t i = 0 ; i < ntohl(size) ; i++) {
         if (castedBuffer[i] != RequestPackets[i_request][i]) {
             fuzzerConsole("Request packet does not match");
             return false;
         }
     }
-    fuzzerConsole("Packet matches. Maybe you've found a bug!", '$');   
     return true;
 }
 
@@ -56,14 +56,9 @@ bool Fuzzer::fuzzerLoop()
 {
     while (true)
     {
-        if (!socket->checkConnection()) startRequester();
-
-        socket->responderRead(&command, &ttype, &size, buffer);
-        size = ntohl(size);
-
         if (!assertRequest())
         {
-            fuzzerConsole("Requester (client) failed. Trying to restart.");
+            fuzzerConsole("Requester (client) failed. Trying to restart.", '!');
             continue;
         }
         i_request++; // Iterates to next request packet to check.
@@ -83,6 +78,10 @@ size_t Fuzzer::getIResponse()
 
 void Fuzzer::fuzzVersion() 
 { 
+    this->command = command;
+    this->ttype = headerMCTP;
+    this->size = SIZE_VERSION;
+    this->buffer = (new Version())->serialize();
     socket->responderWrite(command, headerMCTP, SIZE_VERSION, (new Version())->serialize());
 }
 
