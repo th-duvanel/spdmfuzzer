@@ -24,16 +24,16 @@ public:
     size_t getIResponse();
 
     // The fuzzing kernel:
-    void fuzzVersion();
-    void fuzzCapabilities();
-    void fuzzNegAlgorithms();
-    void fuzzDigets();
-    void fuzzCertificate1();
-    void fuzzCertificate2();
-    void fuzzChallange();
+    void fuzzVersion(bool fuzz = false);
+    void fuzzCapabilities(bool fuzz = false);
+    void fuzzNegAlgorithms(bool fuzz = false);
+    void fuzzDigets(bool fuzz = false);
+    void fuzzCertificate1(bool fuzz = false);
+    void fuzzCertificate2(bool fuzz = false);
+    void fuzzChallange(bool fuzz = false);
 };
 
-typedef void (Fuzzer::*fuzzFunctions)();
+typedef void (Fuzzer::*fuzzFunctions)(bool);
 
 extern std::vector<u8*> RequestPackets;
 extern std::vector<fuzzFunctions> ResponsePackets;

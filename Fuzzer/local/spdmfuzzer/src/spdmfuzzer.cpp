@@ -11,8 +11,7 @@ int main()
 
     while (fuzzer->fuzzerLoop())
     {
-        (fuzzer->*ResponsePackets[fuzzer->getIResponse()])();
-        sleep(1);
+        (fuzzer->*ResponsePackets[fuzzer->getIResponse()])(true);
     }
 
     return 0;

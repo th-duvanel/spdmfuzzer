@@ -76,41 +76,40 @@ size_t Fuzzer::getIResponse()
 
 
 
-void Fuzzer::fuzzVersion() 
+void Fuzzer::fuzzVersion(bool fuzz) 
 { 
-    this->command = command;
-    this->ttype = headerMCTP;
-    this->size = SIZE_VERSION;
-    this->buffer = (new Version())->serialize();
-    socket->responderWrite(command, headerMCTP, SIZE_VERSION, (new Version())->serialize());
+    if (fuzz) buffer = (new Version())->serialize();
+    else      buffer = mockedVersion;
+
+    socket->responderWrite(command, headerMCTP, SIZE_VERSION, buffer);
 }
 
-void Fuzzer::fuzzCapabilities()
+void Fuzzer::fuzzCapabilities(bool fuzz)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CAPABILITIES, mockedCapabilities);
 }
 
-void Fuzzer::fuzzNegAlgorithms()
+void Fuzzer::fuzzNegAlgorithms(bool fuzz)
 {
     socket->responderWrite(command, headerMCTP, SIZE_NEGALGORITHMS, mockedNegAlgorithms);
 }
 
-void Fuzzer::fuzzDigets()
+void Fuzzer::fuzzDigets(bool fuzz)
 {
     socket->responderWrite(command, headerMCTP, SIZE_DIGESTS, mockedDigests);
 }
 
-void Fuzzer::fuzzCertificate1()
+void Fuzzer::fuzzCertificate1(bool fuzz)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CERTIFICATE1, mockedCertificate1);
 }
 
-void Fuzzer::fuzzCertificate2()
+void Fuzzer::fuzzCertificate2(bool fuzz)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CERTIFICATE2, mockedCertificate2);
 }
 
-void Fuzzer::fuzzChallange()
+void Fuzzer::fuzzChallange(bool fuzz)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CHALLENGEAUTH, mockedChallengeAuth);
 }
