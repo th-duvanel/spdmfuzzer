@@ -1,6 +1,6 @@
 #include "../include/utils.hpp"
 
-void fuzzerError(const char* message, int code)
+void fuzzerError(const std::string message, int code)
 {
     std::cerr << "# [!] => " << message << ENDL;
     exit(code);
@@ -19,7 +19,8 @@ void fuzzerConsole(const std::string message, const void* buffer, size_t size)
     for (size_t i = 0; i < size; ++i) {
         ss << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(static_cast<unsigned char>(buf[i])) << " ";
     }
-    fuzzerConsole(message + ENDL + "         " + ss.str());
+    if (size < 5) fuzzerConsole(message + ss.str()); 
+    else fuzzerConsole(message + ENDL + "         " + ss.str());
 }
 
 u64 randomize(u64 min, u64 max)

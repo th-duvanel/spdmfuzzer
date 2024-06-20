@@ -17,7 +17,7 @@
 #define u32 uint32_t
 #define u64 uint64_t
 
-void fuzzerError(const char* message, int code);
+void fuzzerError(const std::string message, int code);
 
 void fuzzerConsole(const std::string message, char sign = 0);
 
