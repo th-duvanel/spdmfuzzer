@@ -5,13 +5,15 @@
 
 #define MAX_LENGTH  1024
 
+// ToDo: free all unneseccary memory
+
 int main()
 {
     Fuzzer* fuzzer = new Fuzzer(PORT, MAX_LENGTH);
 
     while (fuzzer->fuzzerLoop())
     {
-        (fuzzer->*ResponsePackets[fuzzer->getIResponse()])(true);
+        (fuzzer->*ResponsePackets[fuzzer->getIResponse()])(true, false);
     }
 
     return 0;

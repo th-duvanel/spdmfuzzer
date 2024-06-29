@@ -78,7 +78,6 @@ TCP::responderWrite(u32 command, u32 ttype, u32 size, void* buffer)
     ssize_t ret;
     size = htonl(size);
     ttype = htonl(ttype);
-    command = htonl(command);
 
     if ((ret = write(req_sckt, &command, COMMAND)) <= 0) {
         return checkSocketErrors(ret, COMMAND, "Command");
@@ -103,7 +102,6 @@ TCP::responderWrite(u32 command, u32 ttype, u32 size, void* buffer)
 void
 TCP::responderDisconnect()
 {
-    //responderWrite(finishCommand, headerMCTP, 0, nullptr);
     close(req_sckt);
     req_sckt = -1;
     std::cout << ENDL;

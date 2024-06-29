@@ -1,4 +1,5 @@
 #include "../include/socket.hpp"
+#include "../include/mocks.hpp"
 
 class Fuzzer {
 private:
@@ -24,16 +25,16 @@ public:
     size_t getIResponse();
 
     // The fuzzing kernel:
-    void fuzzVersion(bool fuzz = false);
-    void fuzzCapabilities(bool fuzz = false);
-    void fuzzNegAlgorithms(bool fuzz = false);
-    void fuzzDigets(bool fuzz = false);
-    void fuzzCertificate1(bool fuzz = false);
-    void fuzzCertificate2(bool fuzz = false);
-    void fuzzChallange(bool fuzz = false);
+    void fuzzVersion(bool fuzz = false, bool random_size = false);
+    void fuzzCapabilities(bool fuzz = false, bool random_size = false);
+    void fuzzAlgorithms(bool fuzz = false, bool random_size = false);
+    void fuzzDigets(bool fuzz = false, bool random_size = false);
+    void fuzzCertificate1(bool fuzz = false, bool random_size = false);
+    void fuzzCertificate2(bool fuzz = false, bool random_size = false);
+    void fuzzChallange(bool fuzz = false, bool random_size = false);
 };
 
-typedef void (Fuzzer::*fuzzFunctions)(bool);
+typedef void (Fuzzer::*fuzzFunctions)(bool, bool);
 
 extern std::vector<u8*> RequestPackets;
 extern std::vector<fuzzFunctions> ResponsePackets;

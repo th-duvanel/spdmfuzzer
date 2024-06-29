@@ -11,7 +11,7 @@ std::vector<u8*> RequestPackets = { mockedGetVersion,
 
 std::vector<fuzzFunctions> ResponsePackets = { &Fuzzer::fuzzVersion, 
                                                &Fuzzer::fuzzCapabilities,
-                                               &Fuzzer::fuzzNegAlgorithms, 
+                                               &Fuzzer::fuzzAlgorithms, 
                                                &Fuzzer::fuzzDigets, 
                                                &Fuzzer::fuzzCertificate1, 
                                                &Fuzzer::fuzzCertificate2, 
@@ -28,8 +28,7 @@ Fuzzer::Fuzzer(int port, size_t max_length)
 
 void Fuzzer::startRequester()
 {
-    // If not, start the binary in the background
-    system("../openspdm/build/bin/SpdmRequesterTest > /dev/null &");
+    system("../openspdm/build/bin/SpdmRequesterTest &");
     i_request = 0;
     i_response = -1;
     fuzzerConsole("Requester (client) started in the background");
@@ -38,22 +37,21 @@ void Fuzzer::startRequester()
 
 bool Fuzzer::assertRequest()
 {
-    u8* castedBuffer = static_cast<u8*>(buffer);
-
     if (!socket->checkConnection()) startRequester();
     if (!socket->responderRead(&command, &ttype, &size, buffer)) return false;
 
-    for (size_t i = 0 ; i < ntohl(size) ; i++) {
-        if (castedBuffer[i] != RequestPackets[i_request][i]) {
-            fuzzerConsole("Request packet does not match");
-            return false;
-        }
+    if (i_request > 0) {
+        fuzzerConsole("wow! this is not expected.");
+        sleep(5);
     }
     return true;
 }
 
 bool Fuzzer::fuzzerLoop()
 {
+    // ToDo: checks if last fuzzed packet was accepted. If it was,
+    // continue using it in all next connections, until finding the next
+    // fuzzed packet that continues the connection.
     while (true)
     {
         if (!assertRequest())
@@ -74,42 +72,46 @@ size_t Fuzzer::getIResponse()
     return i_response;
 }
 
-
-
-void Fuzzer::fuzzVersion(bool fuzz) 
+void Fuzzer::fuzzVersion(bool fuzz, bool random_size) 
 { 
-    if (fuzz) buffer = (new Version())->serialize();
-    else      buffer = mockedVersion;
+    u32 size = SIZE_VERSION;
 
-    socket->responderWrite(command, headerMCTP, SIZE_VERSION, buffer);
+    if (fuzz) { 
+        Version* version = new Version(random_size);
+        buffer = version->serialize();
+        size   = version->getSize();
+    }
+    else buffer = mockedVersion;
+
+    socket->responderWrite(command, headerMCTP, size, buffer);
 }
 
-void Fuzzer::fuzzCapabilities(bool fuzz)
+void Fuzzer::fuzzCapabilities(bool fuzz, bool random_size)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CAPABILITIES, mockedCapabilities);
 }
 
-void Fuzzer::fuzzNegAlgorithms(bool fuzz)
+void Fuzzer::fuzzAlgorithms(bool fuzz, bool random_size)
 {
-    socket->responderWrite(command, headerMCTP, SIZE_NEGALGORITHMS, mockedNegAlgorithms);
+    socket->responderWrite(command, headerMCTP, SIZE_ALGORITHMS, mockedAlgorithms);
 }
 
-void Fuzzer::fuzzDigets(bool fuzz)
+void Fuzzer::fuzzDigets(bool fuzz, bool random_size)
 {
     socket->responderWrite(command, headerMCTP, SIZE_DIGESTS, mockedDigests);
 }
 
-void Fuzzer::fuzzCertificate1(bool fuzz)
+void Fuzzer::fuzzCertificate1(bool fuzz, bool random_size)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CERTIFICATE1, mockedCertificate1);
 }
 
-void Fuzzer::fuzzCertificate2(bool fuzz)
+void Fuzzer::fuzzCertificate2(bool fuzz, bool random_size)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CERTIFICATE2, mockedCertificate2);
 }
 
-void Fuzzer::fuzzChallange(bool fuzz)
+void Fuzzer::fuzzChallange(bool fuzz, bool random_size)
 {
     socket->responderWrite(command, headerMCTP, SIZE_CHALLENGEAUTH, mockedChallengeAuth);
 }
