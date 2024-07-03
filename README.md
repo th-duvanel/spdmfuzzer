@@ -17,7 +17,7 @@ Os passos seguidos pelo fuzzer serão os seguintes: recebe o GET_VERSION, cria u
 
 ## Compilação e execução
 
-Recomendamos fortemente que utilize o ``spdm-wid`` listado na seção de Projetos Relacioandos abaixo, que é um dissecador para entender os pacotes no tcpdump ou Wireshark.
+Recomendamos fortemente que utilize o ``spdm-wid`` listado na seção de Projetos Relacinandos abaixo, que é um dissecador para entender os pacotes no tcpdump ou Wireshark.
 
 Vale ressaltar que o fuzzer envia mensagens de forma individual (header, command, buffer, size), então, talvez haja diferença no envio dependendo da forma que o protocolo TCP resolva unir os pacotes enviados em um só, deixando o ``spdm-wid`` difícil de se utilizar pois os bytes não são formatados exatamente como em uma comunicação real, já que se trata de uma emulação, com erros como falta de tamanho, etc. Caso isso aconteça, basta executá-lo novamente ou esperar para outro pacote bem montado surgir.
 
@@ -61,7 +61,7 @@ foo@spdmfuzzer:~$ docker build -t spdmfuzzer .      # montar a imagem
 foo@spdmfuzzer:~$ docker run -ti spdmfuzzer         # executá-la por meio do contâiner
 ```
 
-O fuzzer vai rodar automaticamente e não vai parar até que você dê ctrl+c. Logo após você dar ctrl+c, o contâiner será fechado. Nos arquivos do container, terá um .pcap coletado com TODOS os pacotes trocados. Para recuperá-lo, basta:
+O fuzzer vai rodar automaticamente e não vai parar até que você dê ctrl+c. Logo após você dar ctrl+c, o contâiner será fechado. Nos arquivos do contâiner, terá um .pcap coletado com TODOS os pacotes trocados. Para recuperá-lo, basta:
 
 ```console
 foo@spdmfuzzer:~$ docker ps -a   # para capturar o id do container
