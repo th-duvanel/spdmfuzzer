@@ -1,1 +1,5 @@
 /.vscode/
+/spdm-emu/
+/openspdm/
+/src/*.o
+spdmfuzzer
