@@ -17,7 +17,7 @@ Os passos seguidos pelo fuzzer serão os seguintes: recebe o GET_VERSION, cria u
 
 ## Compilação e execução
 
-Recomendamos fortemente que utilize o ``spdm-wid`` listado na seção de Projetos Relacinandos abaixo, que é um dissecador para entender os pacotes no tcpdump ou Wireshark.
+Recomendamos fortemente que utilize o ``spdm-wid`` listado na seção de Projetos Relacionados abaixo, que é um dissecador para entender os pacotes no tcpdump ou Wireshark.
 
 Vale ressaltar que o fuzzer envia mensagens de forma individual (header, command, buffer, size), então, talvez haja diferença no envio dependendo da forma que o protocolo TCP resolva unir os pacotes enviados em um só, deixando o ``spdm-wid`` difícil de se utilizar pois os bytes não são formatados exatamente como em uma comunicação real, já que se trata de uma emulação, com erros como falta de tamanho, etc. Caso isso aconteça, basta executá-lo novamente ou esperar para outro pacote bem montado surgir.
 
@@ -34,7 +34,7 @@ Aqui é possível seguir dois caminhos:
 
 Caso a instalação de bibliotecas e dependências não seja um problema para você, sinta-se livre para instalar localmente em sua máquina. Não será necessário executar nada com privilégios elevados, apenas dar permissão de execução ao bash script.
 
-Ele vai executar e checar algumas dependências em seu sistema (não são muitas), listar e pedir para instalar. Para não ter necessidade de executar sudo com um script, ele não instala automaticamente.
+Ele vai executar e checar algumas dependências em seu sistema (não são muitas), listar e pedir para instalar. Para não ter necessidade de executar sudo com um script, ele não instala automaticamente. Caso não deseje executar o script, abaixo estão as dependências necessárias.
 
 Para isso, basta executar na pasta atual:
 ```console
@@ -64,8 +64,8 @@ foo@spdmfuzzer:~$ docker run -ti spdmfuzzer         # executá-la por meio do co
 O fuzzer vai rodar automaticamente e não vai parar até que você dê ctrl+c. Logo após você dar ctrl+c, o contêiner será fechado. Nos arquivos do contêiner, terá um .pcap coletado com TODOS os pacotes trocados. Para recuperá-lo, basta:
 
 ```console
-foo@spdmfuzzer:~$ docker ps -a   # para capturar o id do container
-CONTAINER ID        IMAGE        NAMES      ...
+foo@spdmfuzzer:~$ docker ps -a   # para capturar o id do contêiner
+container ID        IMAGE        NAMES      ...
 <container-id>      spdmfuzzer   <name>     ...
 
 foo@spdmfuzzer:~$ docker cp <container-id>:/home/spdmfuzzer/spdmfuzzer.pcapng .     # copiar o .pcapng na pasta atual
@@ -76,9 +76,50 @@ Ao aplicar esse .pcap no Wireshark, você terá a visualização completa de tro
 
 O ``spdmfuzzer``possui algumas funções passadas por argumento de linha de comando. Uma delas é, quando você encontra uma resposta inesperada, ele pode aguardar alguns segundos para o utilizador observar o que aconteceu. Por padrão, é usado 3 segundos. Para setar a flag, basta:
 
-```
+```console
 foo@spdmfuzzer:~$ ./spdmfuzzer -t <tempo(s)>
 ```
+
+## Geração de Documentação
+São necessárias duas dependências para visualização completa:
+```console
+doxygen
+graphviz
+```
+
+Esse repositório tem suporte à documentação a partir do doxygen. Caso deseje, basta executar:
+```console
+foo@spdmfuzzer:~$ make doxygen
+```
+
+Acesse ao ``index.html`` em seu navegador dentro da pasta ``doxygen`` que você terá acesso (vale ressaltar que a documentação está em inglẽs).
+
+### Exemplo
+
+```console
+foo@spdmfuzzer:~$ ./spdmfuzzer
+# [+] => Responder (server) listening on port 2323
+# [+] => Requester (client) started in the background
+# [+] => Requester (client) connected
+
+# [+] => Received command: 00 00 00 01 
+# [+] => Received transport type: 00 00 00 01 
+# [+] => Received buffer size: 00 00 00 05 
+# [+] => Received buffer: 05 10 84 00 00 
+
+# [+] => Sent command: 00 00 00 01 
+# [+] => Sent transport type: 00 00 00 01 
+# [+] => Sent buffer size: 00 00 00 0b 
+# [+] => Sent buffer: 05 50 04 00 05 00 02 07 b7 0c 65 
+
+# [+] => Received command: 00 00 00 01 
+# [+] => Received transport type: 00 00 00 01 
+# [+] => Received buffer size: 00 00 00 05 
+# [+] => Received buffer: 05 10 e1 00 00 
+# [+] => wow! this is not expected.
+```
+
+Nessa execução, é possível observar que o fuzzer recebeu uma resposta inesperada. Como não foi informada nenhuma flag de tempo, a cada resposta inesperada são dados 3 segundos para o usuário observar a resposta inesperada.
 
 ## Especificações usadas
 
@@ -92,6 +133,21 @@ GPU: NVIDIA GeForce RTX 3060 Mobile / Max-Q
 Memory: 15328MiB 
 ```
 
+### Dependências
+Abaixo estão as dependências para um sistema que use apt e suas versões. Não é necessário uma versão específica, contudo, estão listadas as utilizadas para realização dos testes.
+```
+g++ 11.4.0
+gawk 5.1.0
+tar 1.34
+gcc 11.4.0
+git 2.34.1
+wget 1.21.2
+make 4.3
+cmake 3.22.1
+moreutils 0.66-1 # sponge
+xz-utils 5.2.5
+```
+
 ## Projetos relacionados
 * **SPDM-WID** - [GitHub](https://github.com/th-duvanel/spdm-wid)
 * **RISCV-SPDM** - [GitHub](https://github.com/th-duvanel/riscv-spdm)
@@ -100,6 +156,3 @@ Memory: 15328MiB
 ## Autor
 
 * **Thiago Duvanel Ferreira** - [Linkedin](https://www.linkedin.com/in/thiago-duvanel-ferreira-142028244/) - [GitHub](https://github.com/th-duvanel)
-
-
-
