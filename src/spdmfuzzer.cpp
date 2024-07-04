@@ -19,34 +19,19 @@ void help()
     //std::cout << "  -f, --fuzz\t\tFuzz the buffer" << ENDL;
 }
 
-bool checkArgs(int argc, char** argv)
+void checkArgs(int argc, char** argv)
 {
-    if (argc == 1)
-    {
-        return true;
-    }
-    if (argc == 2)
-    {
-        if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)
-        {
-            help();
-            return false;
-        }
-    }
-    if (argc == 3)
-    {
-        if (strcmp(argv[1], "-t") == 0 || strcmp(argv[1], "--timeout") == 0)
-        {
-            timer = atoi(argv[2]);
-            return true;
-        }
-    }
-    return false;
+    if (argc == 1) return;
+    else if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) help();
+    else if (argc == 3 && (strcmp(argv[1], "-t") == 0 || strcmp(argv[1], "--timeout") == 0)) timer = atoi(argv[2]);
+    else std::cout << "# [!] => Invalid argument" << ENDL;
+
+    return;
 }
 
 int main(int argc, char** argv)
 {
-    int timer = STD_TIMER;
+    checkArgs(argc, argv);
 
     Fuzzer* fuzzer = new Fuzzer(PORT, timer, MAX_LENGTH);
 
