@@ -1,5 +1,10 @@
 #include "utils.hpp"
 
+/** @file
+ *  This file contains the mocks for the fuzzing process, if they are needed.
+ *  The variable names says for itself.
+ */
+
 #define u8  uint8_t
 #define u32 uint32_t
 
@@ -30,7 +35,3 @@ extern u8 mockedCertificate1[];
 extern u8 mockedCertificate2[];
 extern u8 mockedChallange[];
 extern u8 mockedChallengeAuth[];
-
-extern u32 command;
-extern u32 finishCommand;
-extern u32 headerMCTP;
