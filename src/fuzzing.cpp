@@ -1,6 +1,6 @@
 #include "../include/fuzzing.hpp"
 
-#include <cstdlib>  // For requester start
+#include <cstdlib>
 
 std::vector<u8*> RequestPackets = { mockedGetVersion, 
                                     mockedGetCapabilities, 
@@ -12,14 +12,16 @@ std::vector<u8*> RequestPackets = { mockedGetVersion,
 std::vector<fuzzFunctions> ResponsePackets = { &Fuzzer::fuzzVersion, 
                                                &Fuzzer::fuzzCapabilities,
                                                &Fuzzer::fuzzAlgorithms, 
-                                               &Fuzzer::fuzzDigets, 
+                                               &Fuzzer::fuzzDigests, 
                                                &Fuzzer::fuzzCertificate1, 
                                                &Fuzzer::fuzzCertificate2, 
-                                               &Fuzzer::fuzzChallange };
+                                               &Fuzzer::fuzzChallenge };
 
 // TODO: could construct with member init? (ugly)
 Fuzzer::Fuzzer(int port, int timer, size_t max_length)
 {
+
+
     this->buffer = new u8[max_length];
     this->i_request = 0;
     this->i_response = -1;
@@ -40,6 +42,8 @@ bool Fuzzer::assertRequest()
 {
     if (!socket->checkConnection()) startRequester();
     if (!socket->responderRead(&command, &ttype, &size, buffer)) return false;
+
+    ttype = ntohl(ttype);
 
     if (i_request > 0) {
         fuzzerConsole("wow! this is not expected.");
@@ -85,36 +89,36 @@ void Fuzzer::fuzzVersion(bool fuzz, bool random_size)
     }
     else buffer = mockedVersion;
 
-    socket->responderWrite(command, headerMCTP, size, buffer);
+    socket->responderWrite(command, ttype, size, buffer);
     if (version) delete version;
 }
 
 void Fuzzer::fuzzCapabilities(bool fuzz, bool random_size)
 {
-    socket->responderWrite(command, headerMCTP, SIZE_CAPABILITIES, mockedCapabilities);
+    socket->responderWrite(command, ttype, SIZE_CAPABILITIES, mockedCapabilities);
 }
 
 void Fuzzer::fuzzAlgorithms(bool fuzz, bool random_size)
 {
-    socket->responderWrite(command, headerMCTP, SIZE_ALGORITHMS, mockedAlgorithms);
+    socket->responderWrite(command, ttype, SIZE_ALGORITHMS, mockedAlgorithms);
 }
 
-void Fuzzer::fuzzDigets(bool fuzz, bool random_size)
+void Fuzzer::fuzzDigests(bool fuzz, bool random_size)
 {
-    socket->responderWrite(command, headerMCTP, SIZE_DIGESTS, mockedDigests);
+    socket->responderWrite(command, ttype, SIZE_DIGESTS, mockedDigests);
 }
 
 void Fuzzer::fuzzCertificate1(bool fuzz, bool random_size)
 {
-    socket->responderWrite(command, headerMCTP, SIZE_CERTIFICATE1, mockedCertificate1);
+    socket->responderWrite(command, ttype, SIZE_CERTIFICATE1, mockedCertificate1);
 }
 
 void Fuzzer::fuzzCertificate2(bool fuzz, bool random_size)
 {
-    socket->responderWrite(command, headerMCTP, SIZE_CERTIFICATE2, mockedCertificate2);
+    socket->responderWrite(command, ttype, SIZE_CERTIFICATE2, mockedCertificate2);
 }
 
-void Fuzzer::fuzzChallange(bool fuzz, bool random_size)
+void Fuzzer::fuzzChallenge(bool fuzz, bool random_size)
 {
-    socket->responderWrite(command, headerMCTP, SIZE_CHALLENGEAUTH, mockedChallengeAuth);
+    socket->responderWrite(command, ttype, SIZE_CHALLENGEAUTH, mockedChallengeAuth);
 }
