@@ -1,8 +1,6 @@
 #include "../include/grammar.hpp"
 
-u32 command = (0x00 << 24) | (0x00 << 16) | (0x00 << 8) | 0x01;
 u32 finishCommand = (0x00 << 24) | (0x00 << 16) | (0xff << 8) | 0xfe;
-u32 headerMCTP  = (0x00 << 24) | (0x00 << 16) | (0x00 << 8) | 0x01;
 
 // To make the code more readable, we can define the namespaace right before coding.
 
