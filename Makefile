@@ -23,5 +23,9 @@ $(OBJDIR)/socket.o: $(OBJDIR)/utils.o $(OBJDIR)/socket.cpp $(HEDDIR)/socket.hpp
 $(OBJDIR)/fuzzing.o: $(OBJDIR)/utils.o $(OBJDIR)/grammar.o $(OBJDIR)/socket.o $(OBJDIR)/fuzzing.cpp $(HEDDIR)/fuzzing.hpp
 	$(CC) $(CPPFLAGS) -c $(OBJDIR)/fuzzing.cpp -o $(OBJDIR)/fuzzing.o
 
+doxygen: ./files/doxygen/Doxyfile
+	doxygen ./files/doxygen/Doxyfile
+
 clean:
 	rm -f $(OBJDIR)/*.o spdmfuzzer
+	rm -r doxygen
