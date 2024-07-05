@@ -110,21 +110,6 @@ O ``spdmfuzzer``possui algumas funções passadas por argumento de linha de coma
 ```console
 foo@spdmfuzzer:~$ ./spdmfuzzer -t <tempo(s)>
 ```
-
-## Geração de Documentação
-São necessárias duas dependências para visualização completa:
-```console
-doxygen
-graphviz
-```
-
-Esse repositório tem suporte à documentação a partir do doxygen. Caso deseje, basta executar:
-```console
-foo@spdmfuzzer:~$ make doxygen
-```
-
-Acesse o ``index.html`` em seu navegador dentro da pasta ``doxygen`` que toda documentação estará disponível. Caso deseje, é possível acessá-la em latex também. Vale ressaltar que a documentação está em inglês.
-
 ### Exemplo
 
 ```console
@@ -151,6 +136,20 @@ foo@spdmfuzzer:~$ ./spdmfuzzer
 ```
 
 Nessa execução, é possível observar que o fuzzer recebeu uma resposta inesperada. Como não foi informada nenhuma flag de tempo, a cada resposta inesperada são dados 3 segundos para o usuário observar a resposta inesperada.
+
+## Geração de Documentação
+São necessárias duas dependências para visualização completa:
+```console
+doxygen
+graphviz
+```
+
+Esse repositório tem suporte à documentação a partir do doxygen. Caso deseje, basta executar:
+```console
+foo@spdmfuzzer:~$ make doxygen
+```
+
+Acesse o ``index.html`` em seu navegador dentro da pasta ``doxygen`` que toda documentação estará disponível. Caso deseje, é possível acessá-la em latex também. Vale ressaltar que a documentação está em inglês.
 
 ## Especificações do ambiente utilizado
 ```console
