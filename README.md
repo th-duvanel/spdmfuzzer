@@ -1,4 +1,4 @@
-# spdmfuzzer: a grammar fuzzer for the Security Protocol Data Model
+# spdmfuzzer: a grammar fuzzer for the Security Protocols Data Model
 
 This repo is part of an Undergraduate Research by FAPESP, that aims to develop and test older implementations of SPDM,
 with an objective of searching for vulnerabilities that were already discovered, with the addition of a fuzzer, to claim that
