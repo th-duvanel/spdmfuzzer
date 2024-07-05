@@ -92,7 +92,7 @@ foo@spdmfuzzer:~$ docker build -t spdmfuzzer .      # montar a imagem
 foo@spdmfuzzer:~$ docker run -ti spdmfuzzer         # executá-la por meio do contêiner
 ```
 
-O fuzzer vai rodar automaticamente e não vai parar até que você pressione ctrl e c. Após pressionar ambas teclas, o contêiner será fechado. Nos arquivos do contêiner, terá um .pcapng coletado com todos os pacotes trocados. Para recuperá-lo, basta:
+O fuzzer vai rodar automaticamente e não vai parar até que você pressione ctrl + c. Após pressionar ambas teclas, o contêiner será fechado. Nos arquivos do contêiner, terá um .pcapng coletado com todos os pacotes trocados. Para recuperá-lo, basta:
 
 ```console
 foo@spdmfuzzer:~$ docker ps -a   # para capturar o id do contêiner
