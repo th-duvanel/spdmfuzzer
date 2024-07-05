@@ -1,21 +1,23 @@
 # Aplicação da Técnica Fuzzing em Testes da Implementação de Referência do SPDM
 
-Esse README foi feito para o WTICG para o SBSeg 2024. Caso deseje ler o README original, acesse a branch main ou a branch dev, que possuem versões mais atualizadas e destinadas ao fim de utilização e facilidade. Nesse caso, o foco é a reprodutibilidade de experimentos e facilidade de explicação com foco em um artigo científico, além dos experimentos relatados no próprio artigo científico.
+Esse README foi feito para o WTICG do SBSeg 2024. Caso deseje ler o README original, acesse a branch main ou a branch dev, que possuem versões atualizadas constantemente. Nesse caso, o foco é a reprodutibilidade de experimentos e facilidade de explicação com foco em um artigo científico, além dos experimentos relatados no próprio artigo científico.
 
 ## Resumo
-Testes automatizados realizados durante o desenvolvimento de software são capazes de encontrar falhas antecipadamente, evitando vulnerabilidades que vão desde negação de serviço até escalada de privilégios. Em particular, esses testes automatizados podem ser realizados usando a técnica fuzzing, que coordena o envio de entradas inesperadas para o software sendo testado. Este artigo apresenta os resultados preliminares do spdmfuzzer, um fuzzer que vem sendo desenvolvido para testar a implementação de referência do protocolo SPDM, um protocolo voltado para autenticação de hardware e firmware. Na sua versão atual disponível publicamente, o spdmfuzzer já foi capaz de encontrar comportamentos inesperados na implementação.
+Testes automatizados realizados durante o desenvolvimento de software podem encontrar falhas antecipadamente, evitando vulnerabilidades que vão desde negação de serviço até escalada de privilégios. Em particular, esses testes automatizados podem ser realizados usando a técnica fuzzing, que coordena o envio de entradas inesperadas para o software sendo testado. Este artigo apresenta os resultados preliminares do spdmfuzzer, um fuzzer que vem sendo desenvolvido para testar a implementação de referência do Security Protocols and Data Models (SPDM), um protocolo voltado para atestação de hardware e firmware. Na sua versão atual disponível publicamente, o spdmfuzzer já foi capaz de encontrar comportamentos inesperados na implementação. 
 
 ## O fuzzer
 
-O ``spdmfuzzer``é um fuzzer por gramática orientado a objetos que assume o papel de ``Responder``em uma comunicação a partir do protocolo SPDM. Seu objetivo é enviar mensagens semi-aleatórias para o ``Requester`` de forma a explorar respostas inesperadas para análise.
+O ``spdmfuzzer``é um fuzzer baseado em gramática orientado a objetos que assume o papel de ``Responder``em uma comunicação do protocolo SPDM. Seu objetivo é enviar mensagens semi-aleatórias para o ``Requester`` de forma a explorar respostas inesperadas para análise.
 
-O binário automaticamente inicia o ``Requester``, já que a comunicação pode ser encerrada em certos momentos caso o ``Requester``não tenha achado a mensagem recebida favorável à continuidade da comunicação. Para isso funcionar, é necessário que todos as pastas e arquivos sejam mantido da maneira que estão organizadas no repositório.
+O binário automaticamente inicia o ``Requester``, já que a comunicação pode ser encerrada em certos momentos caso o ``Requester``não tenha achado a mensagem recebida favorável à continuidade da comunicação. Para isso funcionar, é necessário que todos as pastas e arquivos sejam mantidos da maneira que estão organizadas no repositório.
 
-Como o desejado é reproduzir os experimentos, mesmo que o fuzzer não seja determinístico já que temos o fator aleatório na criação de pacotes, este fuzzer está limitado a gerar mensagens VERSION, nas quais são suportadas para recebimento pelo ``Requester``em questão, logo, não haverá muita diferença no tamanho do VERSION mas sim em seu conteúdo.
+Como o desejado é reproduzir os experimentos, mesmo que o fuzzer não seja determinístico já que temos o fator aleatório na criação de pacotes, este fuzzer está limitado a gerar mensagens VERSION, as quais são suportadas para recebimento pelo ``Requester``em questão. Logo, não haverá muita diferença no tamanho do VERSION mas sim em seu conteúdo.
 
 Os passos seguidos pelo fuzzer serão os seguintes: recebe o GET_VERSION, cria um VERSION e responde. Caso seja recusado, o ``Requester``encerra a conexão e o fuzzer inicia outro ``Requester``, caso contrário, ele atesta que a mensagem foi aceita e começa a enviar mensagens mockadas (que futuramente serão substituídas por mensagens fuzzificadas). Essa conexão perdura até a checagem de certificados.
 
 ## Compilação e execução
+
+**A partir de agora, é considerado que você possua um sistema Linux bem atualizado. De preferência, uma distribuição com gerenciador de pacotes apt**
 
 Recomendamos fortemente que utilize o ``spdm-wid`` listado na seção de Projetos Relacionados abaixo, que é um dissecador para entender os pacotes no tcpdump ou Wireshark.
 
@@ -30,11 +32,38 @@ Aqui é possível seguir dois caminhos:
 1. Compilar na sua própria máquina
 2. Compilar automaticamente em contêiner docker
 
+Independente do processo, é necessário clonar o repositório e acessar a branch correta. Para isso, basta:
+```console
+foo@<pasta-atual>: ~$ git clone https://github.com/th-duvanel/spdmfuzzer.git
+    https://github.com/th-duvanel/spdmfuzzer.git
+foo@<pasta-atual>: ~$ cd spdmfuzzer
+foo@spdmfuzzer: ~$ git checkout sbseg24
+    Branch 'sbseg24' set up to track remote branch 'sbseg24' from 'origin'.
+    Switched to a new branch 'sbseg24'
+```
+Agora você pode escolher um dos caminhos descritos acima. 
+**Atenção para a branch de acesso, é muito importante que você esteja na branch ``sbseg24``.**
+
 ### Compilar na sua própria máquina
 
 Caso a instalação de bibliotecas e dependências não seja um problema para você, sinta-se livre para instalar localmente em sua máquina. Não será necessário executar nada com privilégios elevados, apenas dar permissão de execução ao bash script.
 
-Ele vai executar e checar algumas dependências em seu sistema (não são muitas), listar e pedir para instalar. Para não ter necessidade de executar sudo com um script, ele não instala automaticamente. Caso não deseje executar o script, abaixo estão as dependências necessárias.
+Ele vai executar e checar algumas dependências em seu sistema (não são muitas), listar e pedir para instalar. Para não ter necessidade de executar sudo com um script, ele não instala automaticamente. Caso não deseje executar o script, abaixo estão as dependências necessárias e suas versões.
+
+Não é necessário seguir a versão específica utilizada. De preferência utilize a versão mais recente que o gerenciador de pacotes do seu sistema possui ou utilize o tutorial automatizado em contêiner.
+
+```
+g++ 11.4.0
+gawk 5.1.0
+tar 1.34
+gcc 11.4.0
+git 2.34.1
+wget 1.21.2
+make 4.3
+cmake 3.22.1
+moreutils 0.66-1 # sponge
+xz-utils 5.2.5
+```
 
 Para isso, basta executar na pasta atual:
 ```console
@@ -53,7 +82,9 @@ Todas as informações necessárias para entendimento serão exibidas em seu ter
 
 ### Compilar automaticamente em contêiner docker
 
-Essa forma é mais automática, com menos passos e mais visualização. Além de ser instalado e executado em um ambiente virtual, será gerado um .pcap para estudo dos pacotes trocados automaticamente, diferente do passo anterior, que necessita que seja executado o sniffer de forma manual.
+**A depêndencia mais importante nesse caso é possuir o ``docker`` instalado em seu sistema**
+
+Essa forma é mais automática, com menos passos e mais visualização. Além de ser instalado e executado em um ambiente virtual, será gerado um .pcapng para estudo dos pacotes trocados automaticamente, diferente do passo anterior, que necessita que seja executado o sniffer de forma manual.
 
 ```console
 foo@spdmfuzzer:~$ docker build -t spdmfuzzer .      # montar a imagem
@@ -61,7 +92,7 @@ foo@spdmfuzzer:~$ docker build -t spdmfuzzer .      # montar a imagem
 foo@spdmfuzzer:~$ docker run -ti spdmfuzzer         # executá-la por meio do contêiner
 ```
 
-O fuzzer vai rodar automaticamente e não vai parar até que você dê ctrl+c. Logo após você dar ctrl+c, o contêiner será fechado. Nos arquivos do contêiner, terá um .pcap coletado com TODOS os pacotes trocados. Para recuperá-lo, basta:
+O fuzzer vai rodar automaticamente e não vai parar até que você pressione ctrl e c. Após pressionar ambas teclas, o contêiner será fechado. Nos arquivos do contêiner, terá um .pcapng coletado com todos os pacotes trocados. Para recuperá-lo, basta:
 
 ```console
 foo@spdmfuzzer:~$ docker ps -a   # para capturar o id do contêiner
@@ -70,7 +101,7 @@ container ID        IMAGE        NAMES      ...
 
 foo@spdmfuzzer:~$ docker cp <container-id>:/home/spdmfuzzer/spdmfuzzer.pcapng .     # copiar o .pcapng na pasta atual
 ```
-Ao aplicar esse .pcap no Wireshark, você terá a visualização completa de troca de pacotes. Recomenda-se novamente usar o ``spdm-wid``e o filtro de pacotes listado acima para melhor visualização.
+Ao aplicar esse .pcapng no Wireshark, você terá a visualização completa da troca de pacotes. Recomenda-se novamente usar o ``spdm-wid``e o filtro de pacotes listado acima para melhor visualização.
 
 ## Execução (ajuda)
 
@@ -92,7 +123,7 @@ Esse repositório tem suporte à documentação a partir do doxygen. Caso deseje
 foo@spdmfuzzer:~$ make doxygen
 ```
 
-Acesse ao ``index.html`` em seu navegador dentro da pasta ``doxygen`` que você terá acesso (vale ressaltar que a documentação está em inglẽs).
+Acesse o ``index.html`` em seu navegador dentro da pasta ``doxygen`` que toda documentação estará disponível. Caso deseje, é possível acessá-la em latex também. Vale ressaltar que a documentação está em inglês.
 
 ### Exemplo
 
@@ -121,8 +152,7 @@ foo@spdmfuzzer:~$ ./spdmfuzzer
 
 Nessa execução, é possível observar que o fuzzer recebeu uma resposta inesperada. Como não foi informada nenhuma flag de tempo, a cada resposta inesperada são dados 3 segundos para o usuário observar a resposta inesperada.
 
-## Especificações usadas
-
+## Especificações do ambiente utilizado
 ```console
 OS: Ubuntu 22.04.4 LTS x86_64
 Kernel: 6.5.0-41-generic
@@ -131,21 +161,6 @@ CPU: AMD Ryzen 7 5800H with Radeon Graphics (16) @ 4.463GHz
 GPU: AMD ATI 05:00.0 Cezanne 
 GPU: NVIDIA GeForce RTX 3060 Mobile / Max-Q 
 Memory: 15328MiB 
-```
-
-### Dependências
-Abaixo estão as dependências para um sistema que use apt e suas versões. Não é necessário uma versão específica, contudo, estão listadas as utilizadas para realização dos testes.
-```
-g++ 11.4.0
-gawk 5.1.0
-tar 1.34
-gcc 11.4.0
-git 2.34.1
-wget 1.21.2
-make 4.3
-cmake 3.22.1
-moreutils 0.66-1 # sponge
-xz-utils 5.2.5
 ```
 
 ## Projetos relacionados
