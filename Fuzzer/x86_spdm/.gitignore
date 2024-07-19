@@ -1,5 +1,0 @@
-buildroot*/
-spdm-hd-demo/
-libspdm/
-!files/*
-!patches/*
