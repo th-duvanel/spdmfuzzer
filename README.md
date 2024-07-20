@@ -1,56 +1,43 @@
-# Aplicação da Técnica Fuzzing em Testes da Implementação de Referência do SPDM
+# spdmfuzzer: a grammar-based fuzzer for SPDM
 
-Esse README foi feito para o WTICG do SBSeg 2024. Caso deseje ler o README original, acesse a branch main ou a branch dev, que possuem versões atualizadas constantemente. Nesse caso, o foco é a reprodutibilidade de experimentos e facilidade de explicação com foco em um artigo científico, além dos experimentos relatados no próprio artigo científico.
+The `spdmfuzzer` is an object-oriented grammar-based fuzzer that takes on the role of a `Responder` in SPDM protocol communications. Its objective is to send semi-random messages to the `Requester` in order to explore unexpected responses for analysis.
 
-## Resumo
-Testes automatizados realizados durante o desenvolvimento de software podem encontrar falhas antecipadamente, evitando vulnerabilidades que vão desde negação de serviço até escalada de privilégios. Em particular, esses testes automatizados podem ser realizados usando a técnica fuzzing, que coordena o envio de entradas inesperadas para o software sendo testado. Este artigo apresenta os resultados preliminares do spdmfuzzer, um fuzzer que vem sendo desenvolvido para testar a implementação de referência do Security Protocols and Data Models (SPDM), um protocolo voltado para atestação de hardware e firmware. Na sua versão atual disponível publicamente, o spdmfuzzer já foi capaz de encontrar comportamentos inesperados na implementação. 
+The binary automatically starts the `Requester` as communication may terminate if the `Requester` does not find the received message favorable to continue the exchange. To ensure functionality, all folders and files must be maintained as organized within the repository.
 
-## O fuzzer
+If the fuzzer receives an unexpected response, it saves the message used and continues using it until a successful connection is established.
 
-O ``spdmfuzzer``é um fuzzer baseado em gramática orientado a objetos que assume o papel de ``Responder``em uma comunicação do protocolo SPDM. Seu objetivo é enviar mensagens semi-aleatórias para o ``Requester`` de forma a explorar respostas inesperadas para análise.
+## Compilation and Execution
 
-O binário automaticamente inicia o ``Requester``, já que a comunicação pode ser encerrada em certos momentos caso o ``Requester``não tenha achado a mensagem recebida favorável à continuidade da comunicação. Para isso funcionar, é necessário que todos as pastas e arquivos sejam mantidos da maneira que estão organizadas no repositório.
+**Assuming you have an up-to-date Linux system. Preferably, a distribution with apt package manager.**
 
-Como o desejado é reproduzir os experimentos, mesmo que o fuzzer não seja determinístico já que temos o fator aleatório na criação de pacotes, este fuzzer está limitado a gerar mensagens VERSION, as quais são suportadas para recebimento pelo ``Requester``em questão. Logo, não haverá muita diferença no tamanho do VERSION mas sim em seu conteúdo.
+We strongly recommend using `spdm-wid` listed in the Related Projects section below, which is a dissector for understanding packets in tcpdump or Wireshark.
 
-Os passos seguidos pelo fuzzer serão os seguintes: recebe o GET_VERSION, cria um VERSION e responde. Caso seja recusado, o ``Requester``encerra a conexão e o fuzzer inicia outro ``Requester``, caso contrário, ele atesta que a mensagem foi aceita e começa a enviar mensagens mockadas (que futuramente serão substituídas por mensagens fuzzificadas). Essa conexão perdura até a checagem de certificados.
+It's worth noting that the fuzzer sends messages individually (header, command, buffer, size), so there might be differences in transmission depending on how the TCP protocol aggregates sent packets into one, making it difficult for `spdm-wid` to parse as bytes may not be formatted exactly as in real communication due to emulation errors such as missing size, etc. If this occurs, simply rerun it or wait for another well-formed packet to appear.
 
-## Compilação e execução
-
-**A partir de agora, é considerado que você possua um sistema Linux bem atualizado. De preferência, uma distribuição com gerenciador de pacotes apt**
-
-Recomendamos fortemente que utilize o ``spdm-wid`` listado na seção de Projetos Relacionados abaixo, que é um dissecador para entender os pacotes no tcpdump ou Wireshark.
-
-Vale ressaltar que o fuzzer envia mensagens de forma individual (header, command, buffer, size), então, talvez haja diferença no envio dependendo da forma que o protocolo TCP resolva unir os pacotes enviados em um só, deixando o ``spdm-wid`` difícil de se utilizar pois os bytes não são formatados exatamente como em uma comunicação real, já que se trata de uma emulação, com erros como falta de tamanho, etc. Caso isso aconteça, basta executá-lo novamente ou esperar para outro pacote bem montado surgir.
-
-Basta colocar o filtro de pacotes:
+Set the packet filter as follows:
 ```
 tcp.port == 2323 && tcp.flags.push == 1
 ```
 
-Aqui é possível seguir dois caminhos:
-1. Compilar na sua própria máquina
-2. Compilar automaticamente em contêiner docker
+Here, you can follow two paths:
+1. Compile on your own machine
+2. Automatically compile in a Docker container
 
-Independente do processo, é necessário clonar o repositório e acessar a branch correta. Para isso, basta:
+Regardless of the process, you need to clone the repository:
 ```console
-foo@<pasta-atual>: ~$ git clone https://github.com/th-duvanel/spdmfuzzer.git
-    https://github.com/th-duvanel/spdmfuzzer.git
-foo@<pasta-atual>: ~$ cd spdmfuzzer
-foo@spdmfuzzer: ~$ git checkout sbseg24
-    Branch 'sbseg24' set up to track remote branch 'sbseg24' from 'origin'.
-    Switched to a new branch 'sbseg24'
+foo@current-folder:~$ git clone https://github.com/th-duvanel/spdmfuzzer.git
+foo@current-folder:~$ cd spdmfuzzer
 ```
-Agora você pode escolher um dos caminhos descritos acima. 
-**Atenção para a branch de acesso, é muito importante que você esteja na branch ``sbseg24``.**
 
-### Compilar na sua própria máquina
+Now you can choose one of the paths described above.
 
-Caso a instalação de bibliotecas e dependências não seja um problema para você, sinta-se livre para instalar localmente em sua máquina. Não será necessário executar nada com privilégios elevados, apenas dar permissão de execução ao bash script.
+### Compile on your own machine
 
-Ele vai executar e checar algumas dependências em seu sistema (não são muitas), listar e pedir para instalar. Para não ter necessidade de executar sudo com um script, ele não instala automaticamente. Caso não deseje executar o script, abaixo estão as dependências necessárias e suas versões.
+If installing libraries and dependencies is not an issue for you, feel free to install locally on your machine. There is no need to execute anything with elevated privileges; simply grant execution permission to the bash script.
 
-Não é necessário seguir a versão específica utilizada. De preferência utilize a versão mais recente que o gerenciador de pacotes do seu sistema possui ou utilize o tutorial automatizado em contêiner.
+It will run and check some dependencies on your system (not many), list them, and prompt for installation. To avoid the need to run sudo with a script, it does not install automatically. If you prefer not to run the script, below are the necessary dependencies and their versions.
+
+You do not need to follow the specific version used. Preferably, use the latest version available in your system's package manager or use the automated tutorial in a container.
 
 ```
 g++ 11.4.0
@@ -65,34 +52,35 @@ moreutils 0.66-1 # sponge
 xz-utils 5.2.5
 ```
 
-Para isso, basta executar na pasta atual:
+To do this, simply execute in the current folder:
 ```console
 foo@spdmfuzzer:~$ sudo +x compile.sh
 
 foo@spdmfuzzer:~$ ./compile.sh
 ```
-Se quiser acompanhar a troca de mensagens, execute seu sniffer de preferência agora (de preferência com o ``spdm-wid``).
 
-Para executar, basta:
+If you want to monitor message exchange, start your preferred sniffer now (preferably with spdm-wid).
+
+To execute, simply:
 ```console
 foo@spdmfuzzer:~$ ./spdmfuzzer
 ```
 
-Todas as informações necessárias para entendimento serão exibidas em seu terminal.
+All necessary information for understanding will be displayed in your terminal.
 
-### Compilar automaticamente em contêiner docker
+### Automatically compile in Docker container
 
-**A depêndencia mais importante nesse caso é possuir o ``docker`` instalado em seu sistema**
+The most important dependency in this case is having docker installed on your system.
 
-Essa forma é mais automática, com menos passos e mais visualização. Além de ser instalado e executado em um ambiente virtual, será gerado um .pcapng para estudo dos pacotes trocados automaticamente, diferente do passo anterior, que necessita que seja executado o sniffer de forma manual.
+This method is more automated, with fewer steps and more visual feedback. In addition to being installed and executed in a virtual environment, it will generate a .pcapng for automatic packet study exchange, unlike the previous step, which requires manually running the sniffer.
 
 ```console
-foo@spdmfuzzer:~$ docker build -t spdmfuzzer .      # montar a imagem
+foo@spdmfuzzer:~$ docker build -t spdmfuzzer .      # build
 
-foo@spdmfuzzer:~$ docker run -ti spdmfuzzer         # executá-la por meio do contêiner
+foo@spdmfuzzer:~$ docker run -ti spdmfuzzer         # execution
 ```
 
-O fuzzer vai rodar automaticamente e não vai parar até que você pressione ctrl + c. Após pressionar ambas teclas, o contêiner será fechado. Nos arquivos do contêiner, terá um .pcapng coletado com todos os pacotes trocados. Para recuperá-lo, basta:
+The fuzzer will run automatically and will not stop until you press ctrl + c. After pressing both keys, the container will close. In the container files, there will be a .pcapng collected with all the exchanged packets. To retrieve it, simply:
 
 ```console
 foo@spdmfuzzer:~$ docker ps -a   # para capturar o id do contêiner
@@ -101,16 +89,18 @@ container ID        IMAGE        NAMES      ...
 
 foo@spdmfuzzer:~$ docker cp <container-id>:/home/spdmfuzzer/spdmfuzzer.pcapng .     # copiar o .pcapng na pasta atual
 ```
-Ao aplicar esse .pcapng no Wireshark, você terá a visualização completa da troca de pacotes. Recomenda-se novamente usar o ``spdm-wid``e o filtro de pacotes listado acima para melhor visualização.
 
-## Execução (ajuda)
+By applying this .pcapng in Wireshark, you will have a complete view of the packet exchange. It is recommended again to use spdm-wid and the packet filter listed above for better visualization.
 
-O ``spdmfuzzer``possui algumas funções passadas por argumento de linha de comando. Uma delas é, quando você encontra uma resposta inesperada, ele pode aguardar alguns segundos para o utilizador observar o que aconteceu. Por padrão, é usado 3 segundos. Para setar a flag, basta:
+## Execution (help)
+
+spdmfuzzer has some command-line arguments. One of them is when you encounter an unexpected response, it can wait a few seconds for the user to observe what happened. By default, it uses 3 seconds. To set the flag, simply:
 
 ```console
-foo@spdmfuzzer:~$ ./spdmfuzzer -t <tempo(s)>
+foo@spdmfuzzer:~$ ./spdmfuzzer -t <time(s)>
 ```
-### Exemplo
+
+### Example
 
 ```console
 foo@spdmfuzzer:~$ ./spdmfuzzer
@@ -118,55 +108,59 @@ foo@spdmfuzzer:~$ ./spdmfuzzer
 # [+] => Requester (client) started in the background
 # [+] => Requester (client) connected
 
-# [+] => Received command: 00 00 00 01 
-# [+] => Received transport type: 00 00 00 01 
-# [+] => Received buffer size: 00 00 00 05 
-# [+] => Received buffer: 05 10 84 00 00 
+# [+] => Received command: 00 00 00 01
+# [+] => Received transport type: 00 00 00 01
+# [+] => Received buffer size: 00 00 00 05
+# [+] => Received buffer: 05 10 84 00 00
 
-# [+] => Sent command: 00 00 00 01 
-# [+] => Sent transport type: 00 00 00 01 
-# [+] => Sent buffer size: 00 00 00 0b 
-# [+] => Sent buffer: 05 50 04 00 05 00 02 07 b7 0c 65 
+# [+] => Sent command: 00 00 00 01
+# [+] => Sent transport type: 00 00 00 01
+# [+] => Sent buffer size: 00 00 00 0b
+# [+] => Sent buffer: 05 50 04 00 05 00 02 07 b7 0c 65
 
-# [+] => Received command: 00 00 00 01 
-# [+] => Received transport type: 00 00 00 01 
-# [+] => Received buffer size: 00 00 00 05 
-# [+] => Received buffer: 05 10 e1 00 00 
+# [+] => Received command: 00 00 00 01
+# [+] => Received transport type: 00 00 00 01
+# [+] => Received buffer size: 00 00 00 05
+# [+] => Received buffer: 05 10 e1 00 00
 # [+] => wow! this is not expected.
 ```
 
-Nessa execução, é possível observar que o fuzzer recebeu uma resposta inesperada. Como não foi informada nenhuma flag de tempo, a cada resposta inesperada são dados 3 segundos para o usuário observar a resposta inesperada.
+In this execution, you can see that the fuzzer received an unexpected response. Since no time flag was set, 3 seconds are given for the user to observe the unexpected response.
 
-## Geração de Documentação
-São necessárias duas dependências para visualização completa:
+## Documentation Generation
+
+Two dependencies are required for full visualization:
 ```console
 doxygen
 graphviz
 ```
 
-Esse repositório tem suporte à documentação a partir do doxygen. Caso deseje, basta executar:
+This repository supports documentation via doxygen. If desired, simply execute:
+
 ```console
 foo@spdmfuzzer:~$ make doxygen
 ```
 
-Acesse o ``index.html`` em seu navegador dentro da pasta ``doxygen`` que toda documentação estará disponível. Caso deseje, é possível acessá-la em latex também. Vale ressaltar que a documentação está em inglês.
+Access the index.html in your browser inside the doxygen folder for the complete documentation. Alternatively, you can access it in LaTeX format as well. Note that the documentation is in English.
 
-## Especificações do ambiente utilizado
+## Environment Specifications Used
 ```console
 OS: Ubuntu 22.04.4 LTS x86_64
 Kernel: 6.5.0-41-generic
 Shell: zsh 5.8.1
-CPU: AMD Ryzen 7 5800H with Radeon Graphics (16) @ 4.463GHz 
-GPU: AMD ATI 05:00.0 Cezanne 
-GPU: NVIDIA GeForce RTX 3060 Mobile / Max-Q 
-Memory: 15328MiB 
+CPU: AMD Ryzen 7 5800H with Radeon Graphics (16) @ 4.463GHz
+GPU: AMD ATI 05:00.0 Cezanne
+GPU: NVIDIA GeForce RTX 3060 Mobile / Max-Q
+Memory: 15328MiB
 ```
 
-## Projetos relacionados
+## Related Projects
+
 * **SPDM-WID** - [GitHub](https://github.com/th-duvanel/spdm-wid)
 * **RISCV-SPDM** - [GitHub](https://github.com/th-duvanel/riscv-spdm)
 * **TLS fuzzers for SPDM** - [GitHub](https://github.com/th-duvanel/fuzzer-tests)
 
-## Autor
 
-* **Thiago Duvanel Ferreira** - [Linkedin](https://www.linkedin.com/in/thiago-duvanel-ferreira-142028244/) - [GitHub](https://github.com/th-duvanel)
+## Author
+
+Thiago Duvanel Ferreira - LinkedIn - GitHub
