@@ -6,6 +6,8 @@ The binary automatically starts the `Requester` as communication may terminate i
 
 If the fuzzer receives an unexpected response, it saves the message used and continues using it until a successful connection is established.
 
+You can check a version of this document in Portuguese-Brazilian. It's available in the ``doc`` folder.
+
 ## Compilation and Execution
 
 **Assuming you have an up-to-date Linux system. Preferably, a distribution with apt package manager.**
