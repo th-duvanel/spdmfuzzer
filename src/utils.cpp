@@ -29,3 +29,10 @@ u64 randomize(u64 min, u64 max)
     std::uniform_int_distribution<u8> dis(min, max);
     return dis(gen);
 }
+
+void assignBuffer(u8* buffer, u64 pos, u64 value, u8 size)
+{
+    for(u8 i = 0 ; i < size ; i++) {
+        buffer[pos + i] = (value >> (i * 8)) & 0xFF;
+    }
+}

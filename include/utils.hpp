@@ -54,3 +54,13 @@ void socketConsole(const std::string message, void* buffer, size_t size);
  * @param size Buffer's size
  */
 u64 randomize(u64 min, u64 max);
+
+/**
+ * Function that assigns a value to a buffer in a specific position.
+ * 
+ * @param buffer Buffer to be assigned
+ * @param pos Position in the buffer to be assigned
+ * @param value Value to be assigned
+ * @param size Size of the value to be assigned
+ */
+void assignBuffer(u8* buffer, u64 pos, u64 value, u8 size);
