@@ -11,6 +11,7 @@ extern u32 finishCommand;
 
 /**
  * @brief Global variable which represents the size of Measurements Hash size algorithm message
+ * This is a important variable because teh Responder should ensure the length during all measurement response messages.
  */
 extern u8  M;
 
@@ -142,6 +143,34 @@ private:
 
 public:
     Capabilities();
+
+    void* serialize(size_t max = 0) override;
+};
+
+
+class Algorithms : public responsePacket {
+private:
+    u16 length;     ///< Length of response message
+    u8 meas_specs;  ///< Bit mask to select one specification supported by requester
+    u8 reserved;    ///< Reserved field
+
+    u32 meas_hash_algo; // Bit mask listing hashing algorithms for measurements
+    u32 base_asym_sel;  // Bit mask listing assymmetric key signature algorithm selected
+    u32 base_hash_sel;  // Bit mask listing hashing algorithm selected
+
+    u8 reserved_2[12]; ///< Reserved field
+    u8 ext_asym_sel_count;  // Number of extended asymmetric key algorithms selected (0 or 1)
+    u8 ext_hash_sel_count;  // Number of hashing algorithm selected (0 or 1)
+    u16 reserved_3; ///< Reserved field
+
+    struct ext_sel {
+        u8  registry_id;
+        u8  reserved;
+        u16 algorithm_id;
+    } ext_sel[2];
+
+public:
+    Algorithms();
 
     void* serialize(size_t max = 0) override;
 };

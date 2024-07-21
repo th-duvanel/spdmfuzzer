@@ -59,12 +59,12 @@ u32 responsePacket::getSize()
 
 Version::Version() : responsePacket(RequestResponseCode["VERSION"], 0, 0)
 {
-    this->reserved   = randomize(0, 255);
+    this->reserved = randomize(0, UINT8_MAX);
     // For SpdmRequester, this must be between 0 and 2.
     this->entryCount = randomize(0, 2);
-    // this->entryCount = randomize(0, 255);
-    this->size      += 2 + (this->entryCount * 2);
-    this->entry      = new ver_number[this->entryCount];
+    // this->entryCount = randomize(0, UINT8_MAX);
+    this->size += 2 + (this->entryCount * 2);
+    this->entry = new ver_number[this->entryCount];
 
     for(u8 i = 0 ; i < this->entryCount ; i++) {
         this->entry[i].major_version  = randomize(0, 15);
@@ -98,7 +98,7 @@ void* Version::serialize(size_t max)
 
     // Fill in with random numbers
     for(u8 i = 7 + (this->entryCount * 2) ; i < this->size ; i++) {
-        buffer[i] = randomize(0, 255);
+        buffer[i] = randomize(0, UINT8_MAX);
     }
 
     delete[] header;
@@ -109,9 +109,9 @@ void* Version::serialize(size_t max)
 
 Capabilities::Capabilities() : responsePacket(RequestResponseCode["CAPABILITIES"], 0, 0)
 {
-    this->reserved = randomize(0, 255);
-    this->ct_exponent = randomize(0, 255);
-    this->reserved_2 = randomize(0, 65535);
+    this->reserved = randomize(0, UINT8_MAX);
+    this->ct_exponent = randomize(0, UINT8_MAX);
+    this->reserved_2 = randomize(0, UINT16_MAX);
 
     this->flags.cache_cap = randomize(0, 1);
     this->flags.cert_cap = randomize(0, 1);
@@ -133,16 +133,98 @@ void* Capabilities::serialize(size_t max)
 
     buffer[5] = this->reserved;
     buffer[6] = this->ct_exponent;
-    buffer[7] = this->reserved_2 >> 8;
-    buffer[8] = this->reserved_2 & 0xff;
+    assignBuffer(buffer, 7, this->reserved_2, 2);
 
     buffer[9] = this->flags.meas_fresh_cap << 5 | this->flags.meas_cap << 3 | this->flags.chal_cap << 2 | this->flags.cert_cap << 1 | this->flags.cache_cap;
 
     // Fill in with random numbers
     for(u8 i = 10 ; i < this->size ; i++) {
-        buffer[i] = randomize(0, 255);
+        buffer[i] = randomize(0, UINT8_MAX);
     }
 
     delete[] header;
     return buffer;
 }
+
+
+Algorithms::Algorithms() : responsePacket(RequestResponseCode["ALGORITHMS"], 0, 0)
+{
+    //A Responder shall not select both a SPDM-enumerated asymmetric key signature algorithm and an extended
+    //asymmetric key signature algorithm. A Responder shall not select both a SPDM-enumerated hashing algorithm and
+    //an extended Hashing algorithm
+
+    // ToDo: randomize all the values or follow the SPDM rules.
+
+    this->meas_specs = 1 << randomize(0, 7);
+    this->reserved = randomize(0, UINT8_MAX);
+
+    this->meas_hash_algo = 1 << randomize(0, 31);
+    this->base_asym_sel = 1 << randomize(0, 31);
+    this->base_hash_sel = 1 << randomize(0, 31);
+
+    for(u8 i = 0 ; i < 12 ; i++) {
+        this->reserved_2[i] = randomize(0, UINT8_MAX);
+    }
+
+    this->ext_asym_sel_count = randomize(0, 1);
+    this->ext_hash_sel_count = randomize(0, 1);
+    this->reserved_3 = randomize(0, UINT16_MAX);
+
+    if (this->ext_asym_sel_count) {
+        ext_sel[0].registry_id = randomize(0, UINT8_MAX);
+        ext_sel[0].reserved = randomize(0, UINT8_MAX);
+        ext_sel[0].algorithm_id = randomize(0, UINT16_MAX);
+    }
+
+    if (this->ext_hash_sel_count) {
+        ext_sel[1].registry_id = randomize(0, UINT8_MAX);
+        ext_sel[1].reserved = randomize(0, UINT8_MAX);
+        ext_sel[1].algorithm_id = randomize(0, UINT16_MAX);
+    }
+
+    this->size += 32 + (this->ext_asym_sel_count * 3) + (this->ext_hash_sel_count * 3);    
+    this->length = this->size - 4;
+}
+
+void* Algorithms::serialize(size_t max)
+{
+    this->size += randomize(0, max);
+
+    u8* buffer = new u8[this->size];
+
+    u8* header = this->serializeHeader();
+    std::memcpy(buffer, header, 4);
+
+    assignBuffer(buffer, 5, this->length, 2);
+    buffer[7] = this->meas_specs;
+    buffer[8] = this->reserved;
+
+    assignBuffer(buffer, 9, this->meas_hash_algo, 4);
+    assignBuffer(buffer, 13, this->base_asym_sel, 4);
+    assignBuffer(buffer, 17, this->base_hash_sel, 4);
+
+    for(u8 i = 0 ; i < 12 ; i++) {
+        buffer[21 + i] = this->reserved_2[i];
+    }
+
+    buffer[33] = this->ext_asym_sel_count;
+    buffer[34] = this->ext_hash_sel_count;
+    assignBuffer(buffer, 35, this->reserved_3, 2);
+
+    if (this->ext_asym_sel_count) {
+        buffer[37] = this->ext_sel[0].registry_id;
+        buffer[38] = this->ext_sel[0].reserved;
+        assignBuffer(buffer, 39, this->ext_sel[0].algorithm_id, 2);
+    }
+
+    if (this->ext_hash_sel_count) {
+        buffer[41] = this->ext_sel[1].registry_id;
+        buffer[42] = this->ext_sel[1].reserved;
+        assignBuffer(buffer, 43, this->ext_sel[1].algorithm_id, 2);
+    }
+
+    for (u8 i = 45 ; i < this->size ; i++) {
+        buffer[i] = randomize(0, UINT8_MAX);
+    }
+}
+
