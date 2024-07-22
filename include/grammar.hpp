@@ -59,6 +59,12 @@ protected:
     u8* serializeHeader();
 
 public:
+    /**
+     * @brief Destructor for the responsePacket class
+     * 
+     * This destructor is the default destructor for the responsePacket class.
+     */
+    virtual ~responsePacket();
 
     /**
      * @brief Serializes the packet
@@ -112,7 +118,7 @@ public:
      * 
      * This destructor deallocates the entry field.
      */
-    virtual ~Version();
+    ~Version() override;
 
     /**
      * @brief Serializes the packet
@@ -144,6 +150,8 @@ private:
 public:
     Capabilities();
 
+    ~Capabilities() override;
+
     void* serialize(size_t max = 0) override;
 };
 
@@ -171,6 +179,8 @@ private:
 
 public:
     Algorithms();
+
+    ~Algorithms() override;
 
     void* serialize(size_t max = 0) override;
 };

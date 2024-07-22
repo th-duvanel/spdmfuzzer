@@ -26,6 +26,9 @@ private:
 
     int timer; ///< Timer for controlling time when receiving an unexpected response.
 
+    responsePacket* packet; ///< Pointer to the current response packet.
+    std::vector<responsePacket*> storedPackets; ///< Vector containing the request packets to be sent.
+    
     /**
      * Checks the validity of the current request. If the requester receives an unexpected response.
      * @return True if the request is valid, false otherwise.
@@ -63,49 +66,49 @@ public:
      * @param fuzz If true, activates fuzzing for this response message.
      * @param random_size If true, uses a random size for the data buffer.
      */
-    void fuzzVersion(bool fuzz = false, bool random_size = false);
+    void fuzzVersion(bool fuzz = false, size_t max = 0);
 
     /**
      * Fuzzes the Capabilities response message.
      * @param fuzz If true, activates fuzzing for this response message.
      * @param random_size If true, uses a random size for the data buffer.
      */
-    void fuzzCapabilities(bool fuzz = false, bool random_size = false);
+    void fuzzCapabilities(bool fuzz = false, size_t max = 0);
 
     /**
      * Fuzzes the Algorithms response message.
      * @param fuzz If true, activates fuzzing for this response message.
      * @param random_size If true, uses a random size for the data buffer.
      */
-    void fuzzAlgorithms(bool fuzz = false, bool random_size = false);
+    void fuzzAlgorithms(bool fuzz = false, size_t max = 0);
 
     /**
      * Fuzzes the Digests response message.
      * @param fuzz If true, activates fuzzing for this response message.
      * @param random_size If true, uses a random size for the data buffer.
      */
-    void fuzzDigests(bool fuzz = false, bool random_size = false);
+    void fuzzDigests(bool fuzz = false, size_t max = 0);
 
     /**
      * Fuzzes the Certificates response message.
      * @param fuzz If true, activates fuzzing for this response message.
      * @param random_size If true, uses a random size for the data buffer.
      */
-    void fuzzCertificate1(bool fuzz = false, bool random_size = false);
+    void fuzzCertificate1(bool fuzz = false, size_t max = 0);
 
     /**
      * Fuzzes the Certificates response message.
      * @param fuzz If true, activates fuzzing for this response message.
      * @param random_size If true, uses a random size for the data buffer.
      */
-    void fuzzCertificate2(bool fuzz = false, bool random_size = false);
+    void fuzzCertificate2(bool fuzz = false, size_t max = 0);
 
     /**
      * Fuzzes the Challenge response message.
      * @param fuzz If true, activates fuzzing for this response message.
      * @param random_size If true, uses a random size for the data buffer.
      */
-    void fuzzChallenge(bool fuzz = false, bool random_size = false);
+    void fuzzChallenge(bool fuzz = false, size_t max = 0);
 };
 
 /**
@@ -113,15 +116,7 @@ public:
  * @param fuzz If true, activates fuzzing for this response message.
  * @param random_size If true, uses a random size for the data buffer.
  */
-typedef void (Fuzzer::*fuzzFunctions)(bool, bool);
-
-/** 
- * @brief Global vector containing pointers to request packets.
- * 
- * This vector stores pointers to the data of request packets that will be used
- * during the fuzzing process to send to the target.
- */
-extern std::vector<u8*> RequestPackets;
+typedef void (Fuzzer::*fuzzFunctions)(bool, size_t);
 
 /** 
  * @brief Global vector containing response functions for fuzzing.
@@ -129,4 +124,4 @@ extern std::vector<u8*> RequestPackets;
  * This vector stores functions that are called in response to the request packets sent.
  * Each function is responsible for handling a specific response during the fuzzing process.
  */
-extern std::vector<fuzzFunctions> ResponsePackets;
+extern std::vector<fuzzFunctions> responseFuzzing;

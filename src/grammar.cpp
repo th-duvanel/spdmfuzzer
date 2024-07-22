@@ -38,6 +38,8 @@ responsePacket::responsePacket(u8 reqresCode, u8 param1, u8 param2)
     this->param2 = param2;
 }
 
+responsePacket::~responsePacket() {}
+
 u8* responsePacket::serializeHeader()
 {
     u8* buffer = new u8[5];
@@ -122,6 +124,8 @@ Capabilities::Capabilities() : responsePacket(RequestResponseCode["CAPABILITIES"
     this->size += 8;
 }
 
+Capabilities::~Capabilities() {}
+
 void* Capabilities::serialize(size_t max)
 {
     this->size += randomize(0, max);
@@ -186,6 +190,8 @@ Algorithms::Algorithms() : responsePacket(RequestResponseCode["ALGORITHMS"], 0, 
     this->length = this->size - 4;
 }
 
+Algorithms::~Algorithms() {}
+
 void* Algorithms::serialize(size_t max)
 {
     this->size += randomize(0, max);
@@ -226,5 +232,8 @@ void* Algorithms::serialize(size_t max)
     for (u8 i = 45 ; i < this->size ; i++) {
         buffer[i] = randomize(0, UINT8_MAX);
     }
+
+    delete[] header;
+    return buffer;
 }
 

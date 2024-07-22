@@ -22,8 +22,9 @@ void help()
 void checkArgs(int argc, char** argv)
 {
     if (argc == 1) return;
-    else if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) help();
-    else if (argc == 3 && (strcmp(argv[1], "-t") == 0 || strcmp(argv[1], "--timeout") == 0)) timer = atoi(argv[2]);
+    else if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) { help(); exit(1);}
+    else if (argc == 3 && (strcmp(argv[1], "-t") == 0 || strcmp(argv[1], "--timeout") == 0)) timer = 0;
+
     else std::cout << "# [!] => Invalid argument" << ENDL;
 
     return;
@@ -37,7 +38,7 @@ int main(int argc, char** argv)
 
     while (fuzzer->fuzzerLoop())
     {
-        (fuzzer->*ResponsePackets[fuzzer->getIResponse()])(true, false);
+        (fuzzer->*responseFuzzing[fuzzer->getIResponse()])(true, 0);
     }
 
     return 0;
