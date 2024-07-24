@@ -1,5 +1,7 @@
 #include "socket.hpp"
-#include "mocks.hpp"
+
+#include <functional>
+#include <cstdlib>
 
 /** @file
  *  This file contains the main fuzzing objects and functions.
@@ -61,72 +63,17 @@ public:
     bool fuzzerLoop();
 
     /**
-     * Gets the index of the response packet iterator.
-     * @return The current value of the response iterator.
+     * Fuzzes the current packet, creating and sending it.
+     * 
+     * @param fuzz_level Level of fuzzing to be applied.
      */
-    size_t getIResponse();
-
-    /**
-     * Fuzzes the Version response message.
-     * @param fuzz If true, activates fuzzing for this response message.
-     * @param random_size If true, uses a random size for the data buffer.
-     */
-    void fuzzVersion(bool fuzz = false, size_t max = 0);
-
-    /**
-     * Fuzzes the Capabilities response message.
-     * @param fuzz If true, activates fuzzing for this response message.
-     * @param random_size If true, uses a random size for the data buffer.
-     */
-    void fuzzCapabilities(bool fuzz = false, size_t max = 0);
-
-    /**
-     * Fuzzes the Algorithms response message.
-     * @param fuzz If true, activates fuzzing for this response message.
-     * @param random_size If true, uses a random size for the data buffer.
-     */
-    void fuzzAlgorithms(bool fuzz = false, size_t max = 0);
-
-    /**
-     * Fuzzes the Digests response message.
-     * @param fuzz If true, activates fuzzing for this response message.
-     * @param random_size If true, uses a random size for the data buffer.
-     */
-    void fuzzDigests(bool fuzz = false, size_t max = 0);
-
-    /**
-     * Fuzzes the Certificates response message.
-     * @param fuzz If true, activates fuzzing for this response message.
-     * @param random_size If true, uses a random size for the data buffer.
-     */
-    void fuzzCertificate1(bool fuzz = false, size_t max = 0);
-
-    /**
-     * Fuzzes the Certificates response message.
-     * @param fuzz If true, activates fuzzing for this response message.
-     * @param random_size If true, uses a random size for the data buffer.
-     */
-    void fuzzCertificate2(bool fuzz = false, size_t max = 0);
-
-    /**
-     * Fuzzes the Challenge response message.
-     * @param fuzz If true, activates fuzzing for this response message.
-     * @param random_size If true, uses a random size for the data buffer.
-     */
-    void fuzzChallenge(bool fuzz = false, size_t max = 0);
+    void fuzz(int fuzz_level);
 };
 
-/**
- * Function pointer for the fuzzing functions.
- * @param fuzz If true, activates fuzzing for this response message.
- * @param random_size If true, uses a random size for the data buffer.
- */
-typedef void (Fuzzer::*fuzzFunctions)(bool, size_t);
-
 /** 
- * @brief Global vector containing response functions for fuzzing.
+ * @brief Global vector containing response pointers to constructors using lambda..
  * 
  * This vector stores functions that are called in response to the request packets sent.
  * Each function is responsible for handling a specific response during the fuzzing process.
  */
-extern std::vector<fuzzFunctions> responseFuzzing;
+extern std::vector<std::function<responsePacket*(int)>> Responses;

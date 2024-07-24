@@ -1,15 +1,9 @@
 #include "../include/fuzzing.hpp"
 
-#include <cstdlib>
-
-
-std::vector<fuzzFunctions> responseFuzzing = { &Fuzzer::fuzzVersion, 
-                                               &Fuzzer::fuzzCapabilities,
-                                               &Fuzzer::fuzzAlgorithms, 
-                                               &Fuzzer::fuzzDigests, 
-                                               &Fuzzer::fuzzCertificate1, 
-                                               &Fuzzer::fuzzCertificate2, 
-                                               &Fuzzer::fuzzChallenge };
+std::vector<std::function<responsePacket*(int)>> 
+Responses = { [](int fuzz_level) -> responsePacket* { return new Version(fuzz_level); },
+              [](int fuzz_level) -> responsePacket* { return new Capabilities(fuzz_level); },
+              [](int fuzz_level) -> responsePacket* { return new Algorithms(fuzz_level); }, };
 
 Fuzzer::Fuzzer(int port, int timer, size_t max_length)
 {
@@ -65,12 +59,6 @@ bool Fuzzer::fuzzerLoop()
     return true;
 }
 
-// ToDo: get rid of this func
-size_t Fuzzer::getIResponse()
-{
-    return i_response;
-}
-
 void Fuzzer::deletePacket()
 {
     if (this->packet) {
@@ -79,73 +67,12 @@ void Fuzzer::deletePacket()
     }
 }
 
-void Fuzzer::fuzzVersion(bool fuzz, size_t max) 
-{ 
-    buffer = mockedVersion;
-    size = SIZE_VERSION;
-
-    if (fuzz) {
-        deletePacket();
-        packet = (responsePacket*) new Version();
-        packet->serialize(buffer, max);
-        size = packet->getSize();
-    }
-
-    // ToDo: try to remove the line below, since it is repeated in each function.
-    // problem: i can't put the line in fuzzerLoop, since the packet will be generated before
-    // receiving anything from the requester, and in future packets i need the received packet.
-
-    // solution (maybe?): create a generic function for all the packets. Instead of using the
-    // function pointer, use a switch case to call the correct function.
-    socket->responderWrite(command, ttype, size, buffer);
-}
-
-void Fuzzer::fuzzCapabilities(bool fuzz, size_t max)
+void Fuzzer::fuzz(int fuzz_level)
 {
-    buffer = mockedCapabilities;
-    size = SIZE_CAPABILITIES;
+    deletePacket();
 
-    if (fuzz) {
-        deletePacket();
-        packet = (responsePacket*) new Capabilities();
-        packet->serialize(buffer, max);
-        size = packet->getSize();
-    }
+    packet = Responses[i_response](fuzz_level);
+    packet->serialize(buffer);
 
-    socket->responderWrite(command, ttype, size, buffer);
-}
-
-void Fuzzer::fuzzAlgorithms(bool fuzz, size_t max)
-{
-    buffer = mockedAlgorithms;
-    size = SIZE_ALGORITHMS;
-
-    if (fuzz) {
-        if (packet) delete packet;  // Clears last packet
-        packet = new Algorithms();
-        packet->serialize(buffer, max);
-        size = packet->getSize();
-    }
-
-    socket->responderWrite(command, ttype, size, buffer);
-}
-
-void Fuzzer::fuzzDigests(bool fuzz, size_t max)
-{
-    socket->responderWrite(command, ttype, SIZE_DIGESTS, mockedDigests);
-}
-
-void Fuzzer::fuzzCertificate1(bool fuzz, size_t max)
-{
-    socket->responderWrite(command, ttype, SIZE_CERTIFICATE1, mockedCertificate1);
-}
-
-void Fuzzer::fuzzCertificate2(bool fuzz, size_t max)
-{
-    socket->responderWrite(command, ttype, SIZE_CERTIFICATE2, mockedCertificate2);
-}
-
-void Fuzzer::fuzzChallenge(bool fuzz, size_t max)
-{
-    socket->responderWrite(command, ttype, SIZE_CHALLENGEAUTH, mockedChallengeAuth);
+    socket->responderWrite(command, ttype, packet->getSize(), buffer);
 }
