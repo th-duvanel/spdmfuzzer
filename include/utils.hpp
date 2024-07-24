@@ -44,7 +44,7 @@ void fuzzerConsole(const char* message, char sign = '+');
  * @param buffer Buffer added to the message to be printed
  * @param size Buffer's size
  */
-void socketConsole(const std::string& message, void* buffer, size_t size);
+void socketConsole(const char* message, void* buffer, size_t size);
 
 /**
  * Function that prints a message to the console in the specified standard.
