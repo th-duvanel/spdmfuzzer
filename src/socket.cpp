@@ -27,7 +27,7 @@ TCP::TCP(int port)
         fuzzerError("Socket listen failed", 1);
     }
 
-    fuzzerConsole("Responder (server) listening on port " + std::to_string(port));
+    fuzzerConsole(("Responder (server) listening on port " + std::to_string(port)).c_str());
 }
 
 TCP::~TCP()
@@ -64,11 +64,11 @@ TCP::responderRead(u32* command, u32* ttype, u32* size, void* buffer)
     if (*size && (ret = read(req_sckt, buffer, *size)) <= 0) {
         return checkSocketErrors(ret, *size, "Buffer");
     }
-    std::cout << ENDL;
-    socketConsole("Received command: ", command, COMMAND);
-    socketConsole("Received transport type: ", ttype, TTYPE);
-    socketConsole("Received buffer size: ", size, SIZE);
-    socketConsole("Received buffer: ", buffer, ntohl(*size));
+    //std::cout << ENDL;
+    //socketConsole("Received command: ", command, COMMAND);
+    //socketConsole("Received transport type: ", ttype, TTYPE);
+    //socketConsole("Received buffer size: ", size, SIZE);
+    //socketConsole("Received buffer: ", buffer, ntohl(*size));
     return true;
 }
 
@@ -91,11 +91,11 @@ TCP::responderWrite(u32 command, u32 ttype, u32 size, void* buffer)
     if (size && (ret = write(req_sckt, buffer, ntohl(size))) <= 0) {
         return checkSocketErrors(ret, ntohl(size), "Buffer");
     }
-    std::cout << ENDL;
-    socketConsole("Sent command: ", &command, COMMAND);
-    socketConsole("Sent transport type: ", &ttype, TTYPE);
-    socketConsole("Sent buffer size: ", &size, SIZE);
-    socketConsole("Sent buffer: ", buffer, ntohl(size));
+    //std::cout << ENDL;
+    //socketConsole("Sent command: ", &command, COMMAND);
+    //socketConsole("Sent transport type: ", &ttype, TTYPE);
+    //socketConsole("Sent buffer size: ", &size, SIZE);
+    //socketConsole("Sent buffer: ", buffer, ntohl(size));
     return true;
 }
 
@@ -104,7 +104,7 @@ TCP::responderDisconnect()
 {
     close(req_sckt);
     req_sckt = -1;
-    std::cout << ENDL;
+    //std::cout << ENDL;
     fuzzerConsole("Requester (client) disconnected", '!');
 }
 
@@ -129,7 +129,7 @@ bool
 TCP::checkSocketErrors(ssize_t ret, size_t expected, const std::string type)
 {
     if (ret == 0 || ret < 0) {
-        fuzzerError("Socket " + type + " read/write connection closed", 1);
+        fuzzerError(("Socket " + type + " read/write connection closed").c_str(), 1);
         return false;
     }
     return true;
