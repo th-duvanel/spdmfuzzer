@@ -27,7 +27,7 @@
  * @param message Error message to be printed
  * @param code Error code to be printed
  */
-void fuzzerError(const std::string message, int code);
+void fuzzerError(const char* message, int code);
 
 /**
  * Function that prints a message to the console in the specified standard.
@@ -35,7 +35,7 @@ void fuzzerError(const std::string message, int code);
  * @param message Message to be printed
  * @param sign Console type sign
  */
-void fuzzerConsole(const std::string message, char sign = '+');
+void fuzzerConsole(const char* message, char sign = '+');
 
 /**
  * Function that prints a message to the console in the specified standard.
@@ -44,7 +44,7 @@ void fuzzerConsole(const std::string message, char sign = '+');
  * @param buffer Buffer added to the message to be printed
  * @param size Buffer's size
  */
-void socketConsole(const std::string message, void* buffer, size_t size);
+void socketConsole(const std::string& message, void* buffer, size_t size);
 
 /**
  * Function that prints a message to the console in the specified standard.
