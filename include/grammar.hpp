@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include "mocks.hpp"
 
 /** @file
  *  This file contains the SPDM grammar (packet structure)
@@ -30,13 +31,14 @@ extern std::map<std::string, u8> RequestResponseCode;
  */
 class responsePacket {
 protected:
-    u32  size;  ///< Size of the packet
+    u32 size;  ///< Size of the packet
+    u8 fuzz_level; ///< Fuzz level for the packet
 
-    u8   SPDM;  ///< SPDM version
-    u8   major_and_minor; ///< Major and minor version
-    u8   reqresCode; ///< Request Response code
-    u8   param1; ///< First parameter
-    u8   param2; ///< Second parameter
+    u8 SPDM;  ///< SPDM version
+    u8 major_and_minor; ///< Major and minor version
+    u8 reqresCode; ///< Request Response code
+    u8 param1; ///< First parameter
+    u8 param2; ///< Second parameter
 
     /**
      * @brief Constructor for the responsePacket class
@@ -71,11 +73,10 @@ public:
      * 
      * This method serializes the packet, returning a void pointer with the serialized data.
      * 
+     * @param buffer Buffer with the serialized data
      * @param max Max size of the packet. If is set to zero or none, it will not use random size.
-     * 
-     * @return void* Buffer with all the serialized data
      */
-    virtual void serialize(u8* buffer, size_t max = 0) = 0;
+    virtual void serialize(u8* buffer) = 0;
 
     /**
      * @brief Gets the size of the packet
@@ -110,8 +111,10 @@ public:
      * @brief Constructor for the Version class
      * 
      * This constructor initializes the Version class with the common fields and the specific fields for the Version packet.
+     * 
+     * @param fuzz_level Fuzz level for the packet. Default is 0, each level can be explained in the doc session.
      */
-    Version();
+    Version(u8 fuzz_level = 0);
 
     /**
      * @brief Destructor for the Version class
@@ -129,7 +132,7 @@ public:
      * 
      * @return void* Buffer with all the serialized data
      */
-    void serialize(u8* buffer, size_t max = 0) override;
+    void serialize(u8* buffer) override;
 };
 
 
@@ -148,11 +151,11 @@ private:
     } flags;
 
 public:
-    Capabilities();
+    Capabilities(u8 fuzz_level = 0);
 
     ~Capabilities();
 
-    void serialize(u8* buffer, size_t max = 0) override;
+    void serialize(u8* buffer) override;
 };
 
 
@@ -178,10 +181,10 @@ private:
     } ext_sel[2];
 
 public:
-    Algorithms();
+    Algorithms(u8 fuzz_level = 0);
 
     ~Algorithms();
 
-    void serialize(u8* buffer, size_t max = 0) override;
+    void serialize(u8* buffer) override;
 };
 
