@@ -7,6 +7,14 @@ Nesse documento você pode encontrar mais detalhes técnicos sobre o ``spdmfuzze
 
 Mais detalhes serão colocados na documentação futuramente para facilitar a alteração da campanha facilmente.
 
+## Níveis de fuzzing
+
+Nível de fuzzing é um valor inteiro que caracteriza qual o nível de aleatoridade de um construtor, responsável por criar o pacote desejado. Para cada pacote diferente, são números diferentes. Como existem pacotes maiores e mais diversos, ele possui uma quantidade maior de nível comparado aos outros. Segue abaixo a lista de níveis de fuzzing. Originalmente, o fuzzer possui esses níveis de forma aleatorizada a cada rodada.
+
+0 = pacote mockado (ideal, sempre aceito pelo Requester)
+1 = pacote gramatical com campos aleatórios
+2 = pacote gramatical com campos e tamanho adicional totalmente aleatório
+
 ## Arquitetura
 O fuzzer foi feito em C++ por ser uma linguagem orientada a objetos. Além disso, como as bibliotecas padrões do SPDM são feitas em C, é possível uma configuração para uni-las de alguma forma no futuro, talvez, quando o fuzzer for colocado em um ambiente emulado, ou seja, ele deixará de ser um binário e passará a ser uma biblioteca.
 
