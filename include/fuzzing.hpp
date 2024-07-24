@@ -17,7 +17,7 @@ private:
     u32 command; ///< Current command sent to the Requester.
     u32 ttype;   ///< Current transport type sent to the Requester.
     u32 size;    ///< Size of the data buffer.
-    void* buffer; ///< Buffer containing the data to be sent.
+    u8* buffer; ///< Buffer containing the data to be sent.
 
     Socket* socket; ///< Socket used for network communication.
 
@@ -39,6 +39,11 @@ private:
      * Starts the SpdmRequesterTest process.
      */
     void startRequester();
+
+    /**
+     * Deletes packet if has something and assigns nullptr to it.
+     */
+    void deletePacket();
 
 public:
     /**

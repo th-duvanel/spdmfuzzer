@@ -15,11 +15,10 @@ Fuzzer::Fuzzer(int port, int timer, size_t max_length)
 {
     this->buffer = new u8[max_length];
     this->socket = new TCP(port);
-
     this->i_request = 0;
     this->i_response = -1;
-
     this->timer = timer;
+    this->packet = nullptr;
 }
 
 void Fuzzer::startRequester()
@@ -66,9 +65,18 @@ bool Fuzzer::fuzzerLoop()
     return true;
 }
 
+// ToDo: get rid of this func
 size_t Fuzzer::getIResponse()
 {
     return i_response;
+}
+
+void Fuzzer::deletePacket()
+{
+    if (this->packet) {
+        delete packet;
+        packet = nullptr;
+    }
 }
 
 void Fuzzer::fuzzVersion(bool fuzz, size_t max) 
@@ -77,10 +85,10 @@ void Fuzzer::fuzzVersion(bool fuzz, size_t max)
     size = SIZE_VERSION;
 
     if (fuzz) {
-        if (packet) delete packet;  // Clears last packet
-        packet = new Version();
-        buffer = packet->serialize(max);
-        size   = packet->getSize();
+        deletePacket();
+        packet = (responsePacket*) new Version();
+        packet->serialize(buffer, max);
+        size = packet->getSize();
     }
 
     // ToDo: try to remove the line below, since it is repeated in each function.
@@ -98,10 +106,10 @@ void Fuzzer::fuzzCapabilities(bool fuzz, size_t max)
     size = SIZE_CAPABILITIES;
 
     if (fuzz) {
-        if (packet) delete packet;  // Clears last packet
-        packet = new Capabilities();
-        buffer = packet->serialize(max);
-        size   = packet->getSize();
+        deletePacket();
+        packet = (responsePacket*) new Capabilities();
+        packet->serialize(buffer, max);
+        size = packet->getSize();
     }
 
     socket->responderWrite(command, ttype, size, buffer);
@@ -115,8 +123,8 @@ void Fuzzer::fuzzAlgorithms(bool fuzz, size_t max)
     if (fuzz) {
         if (packet) delete packet;  // Clears last packet
         packet = new Algorithms();
-        buffer = packet->serialize(max);
-        size   = packet->getSize();
+        packet->serialize(buffer, max);
+        size = packet->getSize();
     }
 
     socket->responderWrite(command, ttype, size, buffer);
