@@ -4,9 +4,12 @@
 #define PORT        2323
 
 #define MAX_LENGTH  1024
-#define STD_TIMER   3
+#define STD_TIMER   0
 
 int timer = STD_TIMER;
+
+// ToDo: refatorar os prints de saída de pacotes. não é necessário mostrar na tela
+// tudo que é enviado, pode deixar a tela mais limpa.
 
 void help()
 {
@@ -38,7 +41,7 @@ int main(int argc, char** argv)
 
     while (fuzzer->fuzzerLoop())
     {
-        (fuzzer->*responseFuzzing[fuzzer->getIResponse()])(true, 0);
+        (fuzzer->fuzz(0));
     }
 
     return 0;
