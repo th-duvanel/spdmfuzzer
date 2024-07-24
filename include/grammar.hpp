@@ -54,9 +54,9 @@ protected:
      * 
      * This method serializes the header of the packet, returning a buffer with the serialized data.
      * 
-     * @return u8* Buffer with the serialized data
+     * @param buffer with the serialized data
      */
-    u8* serializeHeader();
+    void serializeHeader(u8* buffer);
 
 public:
     /**
@@ -75,7 +75,7 @@ public:
      * 
      * @return void* Buffer with all the serialized data
      */
-    virtual void* serialize(size_t max = 0) = 0;
+    virtual void serialize(u8* buffer, size_t max = 0) = 0;
 
     /**
      * @brief Gets the size of the packet
@@ -118,7 +118,7 @@ public:
      * 
      * This destructor deallocates the entry field.
      */
-    ~Version() override;
+    ~Version();
 
     /**
      * @brief Serializes the packet
@@ -129,7 +129,7 @@ public:
      * 
      * @return void* Buffer with all the serialized data
      */
-    void* serialize(size_t max = 0) override;
+    void serialize(u8* buffer, size_t max = 0) override;
 };
 
 
@@ -150,9 +150,9 @@ private:
 public:
     Capabilities();
 
-    ~Capabilities() override;
+    ~Capabilities();
 
-    void* serialize(size_t max = 0) override;
+    void serialize(u8* buffer, size_t max = 0) override;
 };
 
 
@@ -180,8 +180,8 @@ private:
 public:
     Algorithms();
 
-    ~Algorithms() override;
+    ~Algorithms();
 
-    void* serialize(size_t max = 0) override;
+    void serialize(u8* buffer, size_t max = 0) override;
 };
 

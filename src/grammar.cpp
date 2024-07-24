@@ -40,17 +40,13 @@ responsePacket::responsePacket(u8 reqresCode, u8 param1, u8 param2)
 
 responsePacket::~responsePacket() {}
 
-u8* responsePacket::serializeHeader()
+void responsePacket::serializeHeader(u8* buffer)
 {
-    u8* buffer = new u8[5];
-
     buffer[0] = this->SPDM;
     buffer[1] = this->major_and_minor;
     buffer[2] = this->reqresCode;
     buffer[3] = this->param1;
     buffer[4] = this->param2;
-
-    return buffer;
 }
 
 u32 responsePacket::getSize()
@@ -62,7 +58,6 @@ u32 responsePacket::getSize()
 Version::Version() : responsePacket(RequestResponseCode["VERSION"], 0, 0)
 {
     this->reserved = randomize(0, UINT8_MAX);
-    // For SpdmRequester, this must be between 0 and 2.
     this->entryCount = randomize(0, 2);
     // this->entryCount = randomize(0, UINT8_MAX);
     this->size += 2 + (this->entryCount * 2);
@@ -81,14 +76,11 @@ Version::~Version()
     delete[] this->entry;
 }
 
-void* Version::serialize(size_t max)
+void Version::serialize(u8* buffer, size_t max)
 {
     this->size += randomize(0, max);
 
-    u8* buffer = new u8[this->size];
-
-    u8* header = this->serializeHeader();
-    std::memcpy(buffer, header, 4);
+    serializeHeader(buffer);
 
     buffer[5] = this->reserved;
     buffer[6] = this->entryCount;
@@ -102,9 +94,6 @@ void* Version::serialize(size_t max)
     for(u8 i = 7 + (this->entryCount * 2) ; i < this->size ; i++) {
         buffer[i] = randomize(0, UINT8_MAX);
     }
-
-    delete[] header;
-    return buffer;
 }
 
 
@@ -126,14 +115,9 @@ Capabilities::Capabilities() : responsePacket(RequestResponseCode["CAPABILITIES"
 
 Capabilities::~Capabilities() {}
 
-void* Capabilities::serialize(size_t max)
+void Capabilities::serialize(u8* buffer, size_t max)
 {
-    this->size += randomize(0, max);
-
-    u8* buffer = new u8[this->size];
-
-    u8* header = this->serializeHeader();
-    std::memcpy(buffer, header, 4);
+    serializeHeader(buffer);
 
     buffer[5] = this->reserved;
     buffer[6] = this->ct_exponent;
@@ -145,9 +129,6 @@ void* Capabilities::serialize(size_t max)
     for(u8 i = 10 ; i < this->size ; i++) {
         buffer[i] = randomize(0, UINT8_MAX);
     }
-
-    delete[] header;
-    return buffer;
 }
 
 
@@ -158,7 +139,6 @@ Algorithms::Algorithms() : responsePacket(RequestResponseCode["ALGORITHMS"], 0, 
     //an extended Hashing algorithm
 
     // ToDo: randomize all the values or follow the SPDM rules.
-
     this->meas_specs = 1 << randomize(0, 7);
     this->reserved = randomize(0, UINT8_MAX);
 
@@ -192,14 +172,11 @@ Algorithms::Algorithms() : responsePacket(RequestResponseCode["ALGORITHMS"], 0, 
 
 Algorithms::~Algorithms() {}
 
-void* Algorithms::serialize(size_t max)
+void Algorithms::serialize(u8* buffer, size_t max)
 {
     this->size += randomize(0, max);
 
-    u8* buffer = new u8[this->size];
-
-    u8* header = this->serializeHeader();
-    std::memcpy(buffer, header, 4);
+    serializeHeader(buffer);
 
     assignBuffer(buffer, 5, this->length, 2);
     buffer[7] = this->meas_specs;
@@ -232,8 +209,5 @@ void* Algorithms::serialize(size_t max)
     for (u8 i = 45 ; i < this->size ; i++) {
         buffer[i] = randomize(0, UINT8_MAX);
     }
-
-    delete[] header;
-    return buffer;
 }
 
