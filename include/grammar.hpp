@@ -160,7 +160,6 @@ public:
 
 class Algorithms : public responsePacket {
 private:
-    u16 length;     ///< Length of response message
     u8 meas_specs;  ///< Bit mask to select one specification supported by requester
     u8 reserved;    ///< Reserved field
 

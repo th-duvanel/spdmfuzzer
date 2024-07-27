@@ -91,7 +91,7 @@ void Version::serialize(u8* buffer)
         return;
     }
 
-    if (fuzz_level == 2) size += randomize(0, UINT8_MAX);
+    if (fuzz_level == 4) size += randomize(0, UINT8_MAX);
 
     serializeHeader(buffer);
 
@@ -139,7 +139,7 @@ void Capabilities::serialize(u8* buffer)
         return;
     }
 
-    if (fuzz_level == 2) size += randomize(0, UINT8_MAX);
+    if (fuzz_level == 4) size += randomize(0, UINT8_MAX);
 
     serializeHeader(buffer);
 
@@ -160,20 +160,28 @@ void Capabilities::serialize(u8* buffer)
 Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGORITHMS"], 0, 0)
 {
     if ((this->fuzz_level = fuzz_level) == 0) {
-        size = SIZE_CAPABILITIES;
+        size = SIZE_ALGORITHMS;
         return;
     }
 
     //A Responder shall not select both a SPDM-enumerated asymmetric key signature algorithm and an extended
-    //asymmetric key signature algorithm. A Responder shall not select both a SPDM-enumerated hashing algorithm and
+    //asymmetric key signature algorithm. 
+    //A Responder shall not select both a SPDM-enumerated hashing algorithm and
     //an extended Hashing algorithm
-
-    meas_specs = 1 << randomize(0, 7);
+    if (fuzz_level == 1) {
+        meas_specs = randomize(0, UINT8_MAX);
+        meas_hash_algo = randomize(0, UINT16_MAX);
+        base_asym_sel = randomize(0, UINT16_MAX);
+        base_hash_sel = randomize(0, UINT16_MAX);
+    }
+    else {
+        meas_specs = 1 << randomize(0, 7);
+        // ToDo: add M support
+        meas_hash_algo = 1 << randomize(0, 32);
+        base_asym_sel = 1 << randomize(0, 32);
+        base_hash_sel = 1 << randomize(0, 32);
+    }
     reserved = randomize(0, UINT8_MAX);
-
-    meas_hash_algo = 1 << randomize(0, 31);
-    base_asym_sel = 1 << randomize(0, 31);
-    base_hash_sel = 1 << randomize(0, 31);
 
     for(u8 i = 0 ; i < 12 ; i++) {
         reserved_2[i] = randomize(0, UINT8_MAX);
@@ -195,8 +203,7 @@ Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGO
         ext_sel[1].algorithm_id = randomize(0, UINT16_MAX);
     }
 
-    size += 32 + (ext_asym_sel_count * 3) + (ext_hash_sel_count * 3);    
-    length = size - 4;
+    size += 32 + (ext_asym_sel_count * 4) + (ext_hash_sel_count * 4);
 }
 
 Algorithms::~Algorithms() {}
@@ -204,15 +211,15 @@ Algorithms::~Algorithms() {}
 void Algorithms::serialize(u8* buffer)
 {
     if (fuzz_level == 0) {
-        memcpy(buffer, mockedVersion, size);
+        memcpy(buffer, mockedAlgorithms, size);
         return;
     }
 
-    if (fuzz_level == 2) size += randomize(0, UINT8_MAX);
+    if (fuzz_level == 4) size += randomize(0, UINT8_MAX);
 
     serializeHeader(buffer);
 
-    assignBuffer(buffer, 5, length, 2);
+    assignBuffer(buffer, 5, size - 1, 2);
     buffer[7] = meas_specs;
     buffer[8] = reserved;
 
