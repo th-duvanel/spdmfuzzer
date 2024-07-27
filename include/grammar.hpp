@@ -74,7 +74,6 @@ public:
      * This method serializes the packet, returning a void pointer with the serialized data.
      * 
      * @param buffer Buffer with the serialized data
-     * @param max Max size of the packet. If is set to zero or none, it will not use random size.
      */
     virtual void serialize(u8* buffer) = 0;
 
@@ -90,7 +89,7 @@ public:
 
 /**
  * @class Version
- * @brief VERSION esponse packet grammar
+ * @brief VERSION response packet grammar
  * 
  * This class represents the Version response packet grammar, containing the fields and methods to serialize the packet.
  */

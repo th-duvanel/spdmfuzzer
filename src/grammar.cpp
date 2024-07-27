@@ -7,13 +7,13 @@ u8  M;
 // To make the code more readable, we can define the namespaace right before coding.
 
 inline std::map<std::string, u8> RequestResponseCode = {
+    {"VERSION", 0x04},
+    {"CAPABILITIES", 0x61},
+    {"ALGORITHMS", 0x63},
     {"DIGESTS", 0x01},
     {"CERTIFICATE", 0x02},
     {"CHALLENGE_AUTH", 0x03},
-    {"VERSION", 0x04},
     {"MEASUREMENTS", 0x60},
-    {"CAPABILITIES", 0x61},
-    {"ALGORITHMS", 0x63},
     {"VENDOR_DEFINED_RESPONSE", 0x7E},
     {"KEY_EXCHANGE_RSP", 0x64},
     {"FINISH_RSP", 0x65},
@@ -58,7 +58,7 @@ u32 responsePacket::getSize()
 Version::Version(u8 fuzz_level) : responsePacket(RequestResponseCode["VERSION"], 0, 0)
 {
     if ((this->fuzz_level = fuzz_level) == 0) {
-        entryCount = 0;
+        entryCount = 0; 
         size = SIZE_VERSION;
         return;
     }
@@ -81,6 +81,7 @@ Version::Version(u8 fuzz_level) : responsePacket(RequestResponseCode["VERSION"],
 Version::~Version()
 {
     if (entryCount > 0) delete[] entry;
+    
 }
 
 void Version::serialize(u8* buffer)
@@ -155,6 +156,7 @@ void Capabilities::serialize(u8* buffer)
 }
 
 
+
 Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGORITHMS"], 0, 0)
 {
     if ((this->fuzz_level = fuzz_level) == 0) {
@@ -166,7 +168,6 @@ Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGO
     //asymmetric key signature algorithm. A Responder shall not select both a SPDM-enumerated hashing algorithm and
     //an extended Hashing algorithm
 
-    // ToDo: randomize all the values or follow the SPDM rules.
     meas_specs = 1 << randomize(0, 7);
     reserved = randomize(0, UINT8_MAX);
 
