@@ -1,48 +1,68 @@
 #include "../include/fuzzing.hpp"
 
 #define IP_ADDRESS "127.0.0.1"
-#define PORT        2323
 
-#define MAX_LENGTH  1024
-#define STD_TIMER   0
+int TIMER = 0;
+int PORT = 2323;
+int FUZZ_LEVEL = 1;
+int MAX = 1024;
+bool VERBOSE = false;
 
-int timer = STD_TIMER;
 
-// ToDo: refatorar os prints de saída de pacotes. não é necessário mostrar na tela
-// tudo que é enviado, pode deixar a tela mais limpa.
+void checkArgs(int argc, char** argv);
+void help();
 
-void help()
-{
-    std::cout << "Usage: spdmfuzzer [OPTION]" << ENDL;
-    std::cout << "  -h, --help\t\tDisplay this help message" << ENDL;
-    std::cout << "  -t, --timeout\t\tSets a sleep timer after finding unexpected behavior" << ENDL;
-    //std::cout << "  -p, --port\t\tSet the port to connect to" << ENDL;
-    //std::cout << "  -l, --length\t\tSet the maximum length of the buffer" << ENDL;
-    //std::cout << "  -r, --random\t\tRandomize the size of the buffer" << ENDL;
-    //std::cout << "  -f, --fuzz\t\tFuzz the buffer" << ENDL;
-}
-
-void checkArgs(int argc, char** argv)
-{
-    if (argc == 1) return;
-    else if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) { help(); exit(1);}
-    else if (argc == 3 && (strcmp(argv[1], "-t") == 0 || strcmp(argv[1], "--timeout") == 0)) timer = 0;
-
-    else std::cout << "# [!] => Invalid argument" << ENDL;
-
-    return;
-}
 
 int main(int argc, char** argv)
 {
     checkArgs(argc, argv);
 
-    Fuzzer* fuzzer = new Fuzzer(PORT, timer, MAX_LENGTH);
+    Fuzzer* fuzzer = new Fuzzer(PORT, TIMER, MAX, VERBOSE, FUZZ_LEVEL);
 
     while (fuzzer->fuzzerLoop())
     {
-        (fuzzer->fuzz(0));
+        fuzzer->fuzz();
     }
 
     return 0;
+}
+
+void help()
+{
+    std::cout << "Usage: spdmfuzzer [OPTION1] [OPTION2] ..." << ENDL;
+    std::cout << "  -h, --help\t\tDisplay this help message" << ENDL;
+    std::cout << "  -v, --verbose\t\tEnable verbose mode" << ENDL;
+    std::cout << "  -t, --timeout\t\tSets a sleep timer in seconds after finding unexpected behavior (2)" << ENDL;
+    std::cout << "  -p, --port\t\tSet the port to connect to (2323)" << ENDL;
+    std::cout << "  -f, --fuzz\t\tSet the fuzzing level (-1)" << ENDL;
+    std::cout << "  -l, --len\t\t(USE WITH CAUTION!!!) Set the maximum length of the data buffer (1024)" << ENDL;
+
+    exit(0);
+}
+
+void checkArgs(int argc, char** argv)
+{
+    if (argc > 9) fuzzerError("Too many arguments", 1);
+
+    for (u8 i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) help(); 
+        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) VERBOSE = true;
+        else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--timeout") == 0) {
+            if (i + 1 < argc) TIMER = std::stoi(argv[++i]);
+            else fuzzerError("--timeout requires a value", 1);
+        } 
+        else if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--port") == 0) {
+            if (i + 1 < argc) PORT = std::stoi(argv[++i]);
+            else fuzzerError("--port requires a value", 1);
+        }
+        else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--fuzz") == 0) {
+            if (i + 1 < argc) FUZZ_LEVEL = std::stoi(argv[++i]);
+            else fuzzerError("--fuzz requires a value", 1);
+        }
+        else if (strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--len") == 0) {
+            if (i + 1 < argc) MAX = std::stoi(argv[++i]);
+            else fuzzerError("--len requires a value", 1);
+        }
+        else fuzzerError("Invalid argument", 1);
+    }
 }
