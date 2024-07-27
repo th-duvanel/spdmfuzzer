@@ -5,13 +5,21 @@ Responses = { [](int fuzz_level) -> responsePacket* { return new Version(fuzz_le
               [](int fuzz_level) -> responsePacket* { return new Capabilities(fuzz_level); },
               [](int fuzz_level) -> responsePacket* { return new Algorithms(fuzz_level); }, };
 
-Fuzzer::Fuzzer(int port, int timer, size_t max_length)
+std::vector<std::string> ResponseNames = { "VERSION", "CAPABILITIES", "ALGORITHMS" };
+std::vector<std::string> RequestNames = { "GET_VERSION", "GET_CAPABILITIES", "NEGOTIATE_ALGORITHMS" };
+
+Fuzzer::Fuzzer(int port, int timer, size_t max_length, bool verbose, int fuzz_level)
 {
     this->buffer = new u8[max_length];
-    this->socket = new TCP(port);
+    this->socket = new TCP(port, verbose);
+
     this->i_request = 0;
     this->i_response = -1;
+    this->old_response_size = 0;
+
     this->timer = timer;
+    this->verbose = verbose;
+    this->fuzz_level = fuzz_level;
     this->packet = nullptr;
 }
 
@@ -24,6 +32,24 @@ void Fuzzer::startRequester()
     socket->acceptRequester();
 }
 
+void Fuzzer::printStoredPackets()
+{
+    fuzzerConsole("wow! You have unexpected response(s):", !verbose, '!');
+
+    for (size_t i = 0; i < storedResponses.size(); ++i) {
+        if (i < ResponseNames.size() && i < RequestNames.size()) {
+            socketConsole((ResponseNames[i] + ": ").c_str(), storedResponses[i].first.data(), storedResponses[i].second, !verbose);
+            socketConsole((RequestNames[i + 1] + ": ").c_str(), storedRequests[i].first.data(), storedRequests[i].second, !verbose);
+        }
+    }
+}
+
+void Fuzzer::cleanStoredPackets()
+{
+    storedResponses.clear();
+    storedRequests.clear();
+}
+
 bool Fuzzer::assertRequest()
 {
     if (!socket->checkConnection()) startRequester();
@@ -31,9 +57,19 @@ bool Fuzzer::assertRequest()
 
     ttype = ntohl(ttype);
 
-    if (i_request > 0) {
-        fuzzerConsole("wow! this is not expected.");
-        // Add the spdm accepted message to the list of accepted messages.
+    if (i_request > 0 && (fuzz_level != 3 || i_response >= storedResponses.size())) {
+        fuzzerConsole("wow! The last response wasn't expected.", verbose, '!');
+
+        size = htonl(size);
+
+        std::vector<u8> reqPacket(buffer, buffer + size);
+        std::vector<u8> resPacket(packet->getSize());
+
+        packet->serialize(resPacket.data());
+
+        storedRequests.emplace_back(std::move(reqPacket), size);
+        storedResponses.emplace_back(std::move(resPacket), packet->getSize());
+        
         sleep(timer);
     }
     return true;
@@ -41,38 +77,69 @@ bool Fuzzer::assertRequest()
 
 bool Fuzzer::fuzzerLoop()
 {
-    // ToDo: checks if last fuzzed packet was accepted. If it was,
-    // continue using it in all next connections, until finding the next
-    // fuzzed packet that continues the connection.
-    while (true)
-    {
-        if (!assertRequest())
-        {
-            fuzzerConsole("Requester (client) failed. Trying to restart.", '!');
+    while (true) {
+        if (!assertRequest()) {
+            if (fuzz_level == 3) backtrackFuzzing();
+            else linearFuzzing();
+            
             continue;
         }
-        i_request++; // Iterates to next request packet to check.
+        i_request++; 
         i_response++;
-
         break;
     }
     return true;
 }
 
+void Fuzzer::linearFuzzing()
+{
+    if (!storedResponses.empty()) {
+        printStoredPackets();
+        cleanStoredPackets();
+    }
+    fuzzerConsole("Requester (client) failed. Trying to restart.", verbose, '!');
+}
+
+void Fuzzer::backtrackFuzzing()
+{
+    if (old_response_size != storedResponses.size()) {
+        printStoredPackets();
+        fuzzerConsole("Trying to fuzz the next response...", !verbose, '+');
+
+        if (storedResponses.size() == ResponseNames.size()) {
+            fuzzerConsole("nice! All supported responses were unexpected. Fuzzing round finished, starting another one...", verbose, '!');
+            cleanStoredPackets();
+            system("killall SpdmRequesterTest > /dev/null");
+        }
+        old_response_size = storedResponses.size();
+    }
+}
+
 void Fuzzer::deletePacket()
 {
-    if (this->packet) {
+    if (packet) {
         delete packet;
         packet = nullptr;
     }
 }
 
-void Fuzzer::fuzz(int fuzz_level)
+void Fuzzer::fuzz()
 {
     deletePacket();
 
-    packet = Responses[i_response](fuzz_level);
-    packet->serialize(buffer);
-
-    socket->responderWrite(command, ttype, packet->getSize(), buffer);
+    // Backtrack fuzzing
+    if (fuzz_level == 3 && i_response < storedResponses.size()) {
+        size = storedResponses[i_response].second;
+        memcpy(buffer, storedResponses[i_response].first.data(), size);
+    }
+    // Linear fuzzing or backtrack without sufficient
+    else {
+        if (fuzz_level == -1) 
+            packet = Responses[i_response](randomize(0, 2));
+        else packet = Responses[i_response](fuzz_level);
+        
+        packet->serialize(buffer);
+        size = packet->getSize();
+    }
+    socket->responderWrite(command, ttype, size, buffer);
 }

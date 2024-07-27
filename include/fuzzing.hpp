@@ -25,11 +25,15 @@ private:
 
     size_t i_request;  ///< Iterator for request packets.
     size_t i_response; ///< Iterator for response packets.
-
-    int timer; ///< Timer for controlling time when receiving an unexpected response.
+    size_t old_response_size; ///< Last iteration size of the stored responses.
 
     responsePacket* packet; ///< Pointer to the current response packet.
-    std::vector<responsePacket*> storedPackets; ///< Vector containing the request packets to be sent.
+    std::vector<std::pair<std::vector<u8>, size_t>> storedResponses; ///< Vector containing stored responses and its size.
+    std::vector<std::pair<std::vector<u8>, size_t>> storedRequests; ///< Vector containing stored requests and its size.
+
+    bool verbose; ///< Verbose mode for printing messages.
+    int fuzz_level; ///< Level of fuzzing to be applied.
+    int timer; ///< Timer for controlling time when receiving an unexpected response.
     
     /**
      * Checks the validity of the current request. If the requester receives an unexpected response.
@@ -41,6 +45,14 @@ private:
      * Starts the SpdmRequesterTest process.
      */
     void startRequester();
+
+    void printStoredPackets();
+
+    void cleanStoredPackets();
+
+    void linearFuzzing();
+
+    void backtrackFuzzing();
 
     /**
      * Deletes packet if has something and assigns nullptr to it.
@@ -54,7 +66,7 @@ public:
      * @param timer Timer for controlling time when receiving an unexpected response.
      * @param max_length Maximum length of the data buffer.
      */
-    Fuzzer(int port, int timer, size_t max_length);
+    Fuzzer(int port, int timer, size_t max_length, bool verbose, int fuzz_level);
 
     /**
      * Main loop of the fuzzer.
@@ -64,10 +76,8 @@ public:
 
     /**
      * Fuzzes the current packet, creating and sending it.
-     * 
-     * @param fuzz_level Level of fuzzing to be applied.
      */
-    void fuzz(int fuzz_level);
+    void fuzz();
 };
 
 /** 
@@ -77,3 +87,6 @@ public:
  * Each function is responsible for handling a specific response during the fuzzing process.
  */
 extern std::vector<std::function<responsePacket*(int)>> Responses;
+
+extern std::vector<std::string> ResponseNames;
+extern std::vector<std::string> RequestNames;
