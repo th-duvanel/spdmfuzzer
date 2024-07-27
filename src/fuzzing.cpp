@@ -60,7 +60,7 @@ bool Fuzzer::assertRequest()
     if (i_request > 0 && (fuzz_level != 3 || i_response >= storedResponses.size())) {
         fuzzerConsole("wow! The last response wasn't expected.", verbose, '!');
 
-        size = htonl(size);
+        size = ntohl(size);
 
         std::vector<u8> reqPacket(buffer, buffer + size);
         std::vector<u8> resPacket(packet->getSize());
