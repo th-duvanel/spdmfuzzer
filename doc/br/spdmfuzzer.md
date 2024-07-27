@@ -13,7 +13,9 @@ Nível de fuzzing é um valor inteiro que caracteriza qual o nível de aleatorid
 
 0 = pacote mockado (ideal, sempre aceito pelo Requester)
 1 = pacote gramatical com campos aleatórios
-2 = pacote gramatical com campos e tamanho adicional totalmente aleatório
+2 = pacote gramatical com campos e tamanho adicional totalmente aleatório (NÃO UTILIZE-O COM O SPDMREQUESTER TEST).
+3 = pacote gramatical com back-tracking, ou seja, a cada resposta inesperada, o pacote que enviado pelo fuzzer que teve resposta é armazenado, e é usado para avançar na conexão até que ela seja completada.
+
 
 ## Arquitetura
 O fuzzer foi feito em C++ por ser uma linguagem orientada a objetos. Além disso, como as bibliotecas padrões do SPDM são feitas em C, é possível uma configuração para uni-las de alguma forma no futuro, talvez, quando o fuzzer for colocado em um ambiente emulado, ou seja, ele deixará de ser um binário e passará a ser uma biblioteca.
