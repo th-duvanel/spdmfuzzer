@@ -74,6 +74,8 @@ private:
     struct sockaddr_in address; //< Address structure.
     socklen_t          address_length; //< Address length.
 
+    bool verbose; //< Verbose mode.
+
     /**
      * Asserts the end of the connection by a end command sent by Requester.
      * @param command Command to be checked.
@@ -97,8 +99,9 @@ public:
      * Construct a new TCP object
      * 
      * @param port Used port for connection
+     * @param verbose Verbose mode
      */
-    TCP(int port);
+    TCP(int port, bool verbose);
     
     /**
      * Destroy the TCP object

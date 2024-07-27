@@ -1,11 +1,12 @@
 #include "../include/socket.hpp"
 
 
-TCP::TCP(int port)
+TCP::TCP(int port, bool verbose)
 {
     int optval = 1;
-        req_sckt = -1;
 
+    this->req_sckt = -1;
+    this->verbose = verbose;
     this->address_length = sizeof(this->address);
 
     if ((sckt = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -27,7 +28,7 @@ TCP::TCP(int port)
         fuzzerError("Socket listen failed", 1);
     }
 
-    fuzzerConsole(("Responder (server) listening on port " + std::to_string(port)).c_str());
+    fuzzerConsole(("Responder (server) listening on port " + std::to_string(port)).c_str(), true);
 }
 
 TCP::~TCP()
@@ -41,8 +42,7 @@ TCP::acceptRequester()
     if ((req_sckt = accept(sckt, (struct sockaddr*)&(this->address), &(this->address_length))) < 0) {
         fuzzerError("Socket accept failed", 1);
     }
-
-    fuzzerConsole("Requester (client) connected");
+    fuzzerConsole("Requester (client) connected", verbose);
 }
 
 bool
@@ -64,11 +64,11 @@ TCP::responderRead(u32* command, u32* ttype, u32* size, void* buffer)
     if (*size && (ret = read(req_sckt, buffer, *size)) <= 0) {
         return checkSocketErrors(ret, *size, "Buffer");
     }
-    std::cout << ENDL;
-    socketConsole("Received command: ", command, COMMAND);
-    socketConsole("Received transport type: ", ttype, TTYPE);
-    socketConsole("Received buffer size: ", size, SIZE);
-    socketConsole("Received buffer: ", buffer, ntohl(*size));
+    if (verbose) std::cout << ENDL;
+    socketConsole("Received command: ", command, COMMAND, verbose);
+    socketConsole("Received transport type: ", ttype, TTYPE, verbose);
+    socketConsole("Received buffer size: ", size, SIZE, verbose);
+    socketConsole("Received buffer: ", buffer, ntohl(*size), verbose);
     return true;
 }
 
@@ -91,11 +91,11 @@ TCP::responderWrite(u32 command, u32 ttype, u32 size, void* buffer)
     if (size && (ret = write(req_sckt, buffer, ntohl(size))) <= 0) {
         return checkSocketErrors(ret, ntohl(size), "Buffer");
     }
-    std::cout << ENDL;
-    socketConsole("Sent command: ", &command, COMMAND);
-    socketConsole("Sent transport type: ", &ttype, TTYPE);
-    socketConsole("Sent buffer size: ", &size, SIZE);
-    socketConsole("Sent buffer: ", buffer, ntohl(size));
+    if (verbose) std::cout << ENDL;
+    socketConsole("Sent command: ", &command, COMMAND, verbose);
+    socketConsole("Sent transport type: ", &ttype, TTYPE, verbose);
+    socketConsole("Sent buffer size: ", &size, SIZE, verbose);
+    socketConsole("Sent buffer: ", buffer, ntohl(size), verbose);
     return true;
 }
 
@@ -104,8 +104,8 @@ TCP::responderDisconnect()
 {
     close(req_sckt);
     req_sckt = -1;
-    //std::cout << ENDL;
-    fuzzerConsole("Requester (client) disconnected", '!');
+    if (verbose) std::cout << ENDL;
+    fuzzerConsole("Requester (client) disconnected", verbose, '!');
 }
 
 bool
