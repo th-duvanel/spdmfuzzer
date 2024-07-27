@@ -34,8 +34,9 @@ void fuzzerError(const char* message, int code);
  * 
  * @param message Message to be printed
  * @param sign Console type sign
+ * @param verbose Verbose mode
  */
-void fuzzerConsole(const char* message, char sign = '+');
+void fuzzerConsole(const char* message, bool verbose = false, char sign = '+');
 
 /**
  * Function that prints a message to the console in the specified standard.
@@ -43,8 +44,9 @@ void fuzzerConsole(const char* message, char sign = '+');
  * @param message Message to be printed
  * @param buffer Buffer added to the message to be printed
  * @param size Buffer's size
+ * @param verbose Verbose mode
  */
-void socketConsole(const char* message, void* buffer, size_t size);
+void socketConsole(const char* message, const void* buffer, size_t size, bool verbose = false);
 
 /**
  * Function that prints a message to the console in the specified standard.
