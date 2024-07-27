@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
 #include <vector>
@@ -58,7 +59,7 @@ void socketConsole(const char* message, const void* buffer, size_t size, bool ve
 u64 randomize(u64 min, u64 max);
 
 /**
- * Function that assigns a value to a buffer in a specific position.
+ * Function that assigns a value to a buffer in a specific position in network format.
  * 
  * @param buffer Buffer to be assigned
  * @param pos Position in the buffer to be assigned
