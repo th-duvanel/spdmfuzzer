@@ -3,10 +3,13 @@
 std::vector<std::function<responsePacket*(int)>> 
 Responses = { [](int fuzz_level) -> responsePacket* { return new Version(fuzz_level); },
               [](int fuzz_level) -> responsePacket* { return new Capabilities(fuzz_level); },
-              [](int fuzz_level) -> responsePacket* { return new Algorithms(fuzz_level); }, };
+              [](int fuzz_level) -> responsePacket* { return new Algorithms(fuzz_level); },
+              [](int fuzz_level) -> responsePacket* { return new Digests(fuzz_level); },
+              [](int fuzz_level) -> responsePacket* { return new Certificate(fuzz_level); },
+              [](int fuzz_level) -> responsePacket* { return new ChallengeAuth(fuzz_level); } };
 
-std::vector<std::string> ResponseNames = { "VERSION", "CAPABILITIES", "ALGORITHMS" };
-std::vector<std::string> RequestNames = { "GET_VERSION", "GET_CAPABILITIES", "NEGOTIATE_ALGORITHMS" };
+std::vector<std::string> ResponseNames = { "VERSION", "CAPABILITIES", "ALGORITHMS", "DIGESTS", "CERTIFICATE", "CHALLENGE_AUTH" };
+std::vector<std::string> RequestNames = { "GET_VERSION", "GET_CAPABILITIES", "NEGOTIATE_ALGORITHMS", "GET_DIGESTS", "GET_CERTIFICATE", "CHALLENGE" };
 
 Fuzzer::Fuzzer(int port, int timer, size_t max_length, bool verbose, int fuzz_level)
 {
@@ -57,7 +60,7 @@ bool Fuzzer::assertRequest()
 
     ttype = ntohl(ttype);
 
-    if (i_request > 0 && (fuzz_level != 3 || i_response >= storedResponses.size())) {
+    if (i_request > 0 && i_response >= storedResponses.size()) {
         fuzzerConsole("wow! The last response wasn't expected.", verbose, '!');
 
         size = ntohl(size);
