@@ -14,7 +14,8 @@ extern u32 finishCommand;
  * @brief Global variable which represents the size of Measurements Hash size algorithm message
  * This is a important variable because teh Responder should ensure the length during all measurement response messages.
  */
-extern u8  M;
+extern u8 M;
+extern u8 H;
 
 /**
  * @brief Possible Request Response codes from SPDM
@@ -186,3 +187,51 @@ public:
     void serialize(u8* buffer) override;
 };
 
+class Digests : public responsePacket {
+private:
+    u8 **digests;
+
+public:
+    Digests(u8 fuzz_level = 0);
+
+    ~Digests();
+
+    void serialize(u8* buffer) override;
+};
+
+class Certificate : public responsePacket {
+private:
+    u16 portion_length;
+    u16 remainder_length;
+
+    struct cert_chain {
+        u16 length;
+        u16 reserved;
+        u8 *root_hash;
+        u8 *certificates;
+    } *cert_chain;
+
+public:
+    Certificate(u8 fuzz_level = 0);
+
+    ~Certificate();
+
+    void serialize(u8* buffer) override;
+};
+
+class ChallengeAuth : public responsePacket {
+private:
+    u8 *cert_chain_hash;
+    u8 nonce[32];
+    u8 *mes_sum_hash;
+    u16 opaque_length;
+    u8 *opaque_data;
+    u8 *singature;
+
+public:
+    ChallengeAuth(u8 fuzz_level = 0);
+
+    ~ChallengeAuth();
+
+    void serialize(u8* buffer) override;
+};

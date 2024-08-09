@@ -2,7 +2,7 @@
 
 u32 finishCommand = (0x00 << 24) | (0x00 << 16) | (0xff << 8) | 0xfe;
 
-u8  M;
+u8 M, H;
 
 // To make the code more readable, we can define the namespaace right before coding.
 
@@ -252,3 +252,58 @@ void Algorithms::serialize(u8* buffer)
     } 
 }
 
+
+Digests::Digests(u8 fuzz_level) : responsePacket(RequestResponseCode["DIGESTS"], 0, 0)
+{
+    if (fuzz_level == 0) {
+        size = SIZE_DIGESTS;
+        return;
+    }
+}
+
+Digests::~Digests() {}
+
+void Digests::serialize(u8* buffer)
+{
+    if (fuzz_level == 0) {
+        memcpy(buffer, mockedDigests, size);
+        return;
+    }
+}
+
+
+Certificate::Certificate(u8 fuzz_level) : responsePacket(RequestResponseCode["CERTIFICATE"], 0, 0)
+{
+    if (fuzz_level >= 0) {
+        size = SIZE_CERTIFICATE1;
+        return;
+    }
+}
+
+Certificate::~Certificate() {}
+
+void Certificate::serialize(u8* buffer)
+{
+    if (fuzz_level >= 0) {
+        memcpy(buffer, mockedCertificate1, size);
+        return;
+    }
+}
+
+ChallengeAuth::ChallengeAuth(u8 fuzz_level) : responsePacket(RequestResponseCode["CHALLENGE_AUTH"], 0, 0)
+{
+    if (fuzz_level >= 0) {
+        size = SIZE_CHALLENGEAUTH;
+        return;
+    }
+}
+
+ChallengeAuth::~ChallengeAuth() {}
+
+void ChallengeAuth::serialize(u8* buffer)
+{
+    if (fuzz_level >= 0) {
+        memcpy(buffer, mockedChallengeAuth, size);
+        return;
+    }
+}
