@@ -5,7 +5,7 @@
 int TIMER = 0;
 int PORT = 2323;
 int FUZZ_LEVEL = 1;
-int MAX = 1024;
+int MAX = 2048;
 bool VERBOSE = false;
 
 
@@ -34,8 +34,8 @@ void help()
     std::cout << "  -v, --verbose\t\tEnable verbose mode" << ENDL;
     std::cout << "  -t, --timeout\t\tSets a sleep timer in seconds after finding unexpected behavior (2)" << ENDL;
     std::cout << "  -p, --port\t\tSet the port to connect to (2323)" << ENDL;
-    std::cout << "  -f, --fuzz\t\tSet the fuzzing level (-1)" << ENDL;
-    std::cout << "  -l, --len\t\t(USE WITH CAUTION!!!) Set the maximum length of the data buffer (1024)" << ENDL;
+    std::cout << "  -f, --fuzz\t\tSet the fuzzing level (1)" << ENDL;
+    std::cout << "  -l, --len\t\t(USE WITH CAUTION!!!) Set the maximum length of the data buffer (2048)" << ENDL;
 
     exit(0);
 }
