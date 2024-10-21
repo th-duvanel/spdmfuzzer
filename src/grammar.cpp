@@ -3,6 +3,7 @@
 u32 finishCommand = (0x00 << 24) | (0x00 << 16) | (0xff << 8) | 0xfe;
 
 u8 M, H;
+u8 CERT_SENT = 0;
 
 // To make the code more readable, we can define the namespaace right before coding.
 
@@ -20,6 +21,16 @@ inline std::map<std::string, u8> RequestResponseCode = {
     {"ERROR", 0x7F}
 };
 
+inline std::map<u8, u8> HashAlgoSizes = {
+    {0, 0},     // Raw Bit Stream
+    {1, 32},    // TPM_ALG_SHA_256
+    {2, 48},    // TPM_ALG_SHA_384
+    {3, 64},    // TPM_ALG_SHA_512
+    {4, 32},    // TPM_ALG_SHA3_256
+    {5, 48},    // TPM_ALG_SHA3_384
+    {6, 64}     // TPM_ALG_SHA3_512
+};
+
 // The real packet structure is stored in each packet class.
 
 // The idea here is to create a class that will store the structure of parts of the packet,
@@ -27,15 +38,13 @@ inline std::map<std::string, u8> RequestResponseCode = {
 // compromissing the packet structure.
 
 
-responsePacket::responsePacket(u8 reqresCode, u8 param1, u8 param2)
+responsePacket::responsePacket(u8 reqresCode)
 {
     size = 5;
     SPDM = 0x05;
 
     this->reqresCode = reqresCode;
     this->major_and_minor = (randomize(0, 15) << 4) | randomize(0, 15);
-    this->param1 = param1;
-    this->param2 = param2;
 }
 
 responsePacket::~responsePacket() {}
@@ -55,7 +64,7 @@ u32 responsePacket::getSize()
 }
 
 
-Version::Version(u8 fuzz_level) : responsePacket(RequestResponseCode["VERSION"], 0, 0)
+Version::Version(u8 fuzz_level) : responsePacket(RequestResponseCode["VERSION"])
 {
     if ((this->fuzz_level = fuzz_level) == 0) {
         entryCount = 0; 
@@ -110,7 +119,7 @@ void Version::serialize(u8* buffer)
 
 
 
-Capabilities::Capabilities(u8 fuzz_level) : responsePacket(RequestResponseCode["CAPABILITIES"], 0, 0)
+Capabilities::Capabilities(u8 fuzz_level) : responsePacket(RequestResponseCode["CAPABILITIES"])
 {
     if ((this->fuzz_level = fuzz_level) == 0) {
         size = SIZE_CAPABILITIES;
@@ -157,7 +166,7 @@ void Capabilities::serialize(u8* buffer)
 
 
 
-Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGORITHMS"], 0, 0)
+Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGORITHMS"])
 {
     if ((this->fuzz_level = fuzz_level) == 0) {
         size = SIZE_ALGORITHMS;
@@ -176,10 +185,24 @@ Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGO
     }
     else {
         meas_specs = 1 << randomize(0, 7);
-        // ToDo: add M support
-        meas_hash_algo = 1 << randomize(0, 32);
-        base_asym_sel = 1 << randomize(0, 32);
-        base_hash_sel = 1 << randomize(0, 32);
+
+        int selected_algorithm = randomize(0, 31);
+        meas_hash_algo = 1 << selected_algorithm;
+
+        if (selected_algorithm < 7) {
+            M = HashAlgoSizes[selected_algorithm];
+        }
+        else M = 0;
+
+        base_asym_sel = 1 << randomize(0, 31);
+
+        selected_algorithm = randomize(0, 31);
+        base_hash_sel = 1 << selected_algorithm;
+        
+        if (selected_algorithm < 7) {
+            H = HashAlgoSizes[selected_algorithm];
+        }
+        else H = 0;
     }
     reserved = randomize(0, UINT8_MAX);
 
@@ -253,12 +276,30 @@ void Algorithms::serialize(u8* buffer)
 }
 
 
-Digests::Digests(u8 fuzz_level) : responsePacket(RequestResponseCode["DIGESTS"], 0, 0)
+Digests::Digests(u8 fuzz_level) : responsePacket(RequestResponseCode["DIGESTS"])
 {
     if (fuzz_level == 0) {
         size = SIZE_DIGESTS;
         return;
     }
+    
+    u8 digests_qtt = randomize(0, 8);
+
+    if (fuzz_level == 2) { // Setar os bits da esquerda à direita
+        for (u8 i = 0, param2 = 0; i < digests_qtt; i++) {
+            param2 |= (1 << (7 - i));
+        }
+    }
+    else param2 = randomize(0, UINT8_MAX);  // Setar aleatoriamente
+
+    digests = new u8*[digests_qtt];
+    for(u8 i = 0 ; i < digests_qtt ; i++) {
+        digests[i] = new u8[H];
+        for(u8 j = 0 ; j < H ; j++) {
+            digests[i][j] = randomize(0, UINT8_MAX);
+        }
+    }
+    size += (digests_qtt * H);
 }
 
 Digests::~Digests() {}
@@ -269,13 +310,26 @@ void Digests::serialize(u8* buffer)
         memcpy(buffer, mockedDigests, size);
         return;
     }
+
+    if (fuzz_level == 4) size += randomize(0, UINT8_MAX);
+
+    serializeHeader(buffer);
+    
+    u8 digests_qtt = std::bitset<8>(param2).count();
+    for (u8 i = 0; i < digests_qtt; i++) {
+        for (u8 j = 0; j < H; j++) {
+            buffer[5 + (i * H) + j] = digests[i][j];
+        }
+    }
 }
 
 
-Certificate::Certificate(u8 fuzz_level) : responsePacket(RequestResponseCode["CERTIFICATE"], 0, 0)
+Certificate::Certificate(u8 fuzz_level) : responsePacket(RequestResponseCode["CERTIFICATE"])
 {
     if (fuzz_level >= 0) {
-        size = SIZE_CERTIFICATE1;
+        if (!CERT_SENT) size = SIZE_CERTIFICATE1;
+        else size = SIZE_CERTIFICATE2;
+        
         return;
     }
 }
@@ -285,16 +339,32 @@ Certificate::~Certificate() {}
 void Certificate::serialize(u8* buffer)
 {
     if (fuzz_level >= 0) {
-        memcpy(buffer, mockedCertificate1, size);
+        if (!CERT_SENT) {
+            memcpy(buffer, mockedCertificate1, size);
+            CERT_SENT++;
+        }
+        else {
+            memcpy(buffer, mockedCertificate2, size);
+            CERT_SENT = 0;
+        }
         return;
     }
 }
 
-ChallengeAuth::ChallengeAuth(u8 fuzz_level) : responsePacket(RequestResponseCode["CHALLENGE_AUTH"], 0, 0)
+ChallengeAuth::ChallengeAuth(u8 fuzz_level) : responsePacket(RequestResponseCode["CHALLENGE_AUTH"])
 {
     if (fuzz_level >= 0) {
         size = SIZE_CHALLENGEAUTH;
         return;
+    }
+
+    param1 |= 1 << randomize(0, 7);
+    param2 = randomize(0, UINT8_MAX);
+
+    cert_chain_hash = new u8[H];
+
+    for(u8 i = 0 ; i < H ; i++) {
+        cert_chain_hash[i] = randomize(0, UINT8_MAX);
     }
 }
 

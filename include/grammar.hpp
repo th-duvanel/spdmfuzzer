@@ -47,10 +47,8 @@ protected:
      * This constructor initializes the responsePacket class with the common fields.
      * 
      * @param reqresCode Request Response code
-     * @param param1 First parameter
-     * @param param2 Second parameter
      */
-    responsePacket(u8 reqresCode, u8 param1, u8 param2);
+    responsePacket(u8 reqresCode);
 
     /**
      * @brief Serializes the header of the packet
