@@ -7,6 +7,9 @@
  *  This file contains the main fuzzing objects and functions.
  */
 
+extern std::vector<std::pair<std::vector<u8>, size_t>> storedResponses; ///< Vector containing stored responses and its size.
+extern std::vector<std::pair<std::vector<u8>, size_t>> storedRequests; ///< Vector containing stored requests and its size.
+
 /**
  * @class Fuzzer
  * @brief Class responsible for performing fuzzing on different parts of network communication.
@@ -28,8 +31,6 @@ private:
     size_t old_response_size; ///< Last iteration size of the stored responses.
 
     responsePacket* packet; ///< Pointer to the current response packet.
-    std::vector<std::pair<std::vector<u8>, size_t>> storedResponses; ///< Vector containing stored responses and its size.
-    std::vector<std::pair<std::vector<u8>, size_t>> storedRequests; ///< Vector containing stored requests and its size.
 
     bool verbose; ///< Verbose mode for printing messages.
     int fuzz_level; ///< Level of fuzzing to be applied.
