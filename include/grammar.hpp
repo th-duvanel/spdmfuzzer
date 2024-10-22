@@ -5,6 +5,9 @@
  *  This file contains the SPDM grammar (packet structure)
  */
 
+extern std::vector<std::vector<u8>> storedResponses; ///< Vector containing stored responses and its size.
+extern std::vector<std::vector<u8>> storedRequests; ///< Vector containing stored requests and its size.
+
 /**
  * @brief Global variable which represents the finish connection command from Requester.
  */

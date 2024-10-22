@@ -11,9 +11,6 @@ Responses = { [](int fuzz_level) -> responsePacket* { return new Version(fuzz_le
 std::vector<std::string> ResponseNames = { "VERSION", "CAPABILITIES", "ALGORITHMS", "DIGESTS", "CERTIFICATE", "CHALLENGE_AUTH" };
 std::vector<std::string> RequestNames = { "GET_VERSION", "GET_CAPABILITIES", "NEGOTIATE_ALGORITHMS", "GET_DIGESTS", "GET_CERTIFICATE", "CHALLENGE" };
 
-std::vector<std::pair<std::vector<u8>, size_t>> storedResponses; ///< Vector containing stored responses and its size.
-std::vector<std::pair<std::vector<u8>, size_t>> storedRequests; ///< Vector containing stored requests and its size.
-
 Fuzzer::Fuzzer(int port, int timer, size_t max_length, bool verbose, int fuzz_level)
 {
     this->buffer = new u8[max_length];
@@ -44,8 +41,8 @@ void Fuzzer::printStoredPackets()
 
     for (size_t i = 0; i < storedResponses.size(); ++i) {
         if (i < ResponseNames.size() && i < RequestNames.size()) {
-            socketConsole((ResponseNames[i] + ": ").c_str(), storedResponses[i].first.data(), storedResponses[i].second, !verbose);
-            socketConsole((RequestNames[i + 1] + ": ").c_str(), storedRequests[i].first.data(), storedRequests[i].second, !verbose);
+            socketConsole((ResponseNames[i] + ": ").c_str(), storedResponses[i].data(), storedResponses[i].size(), !verbose);
+            socketConsole((RequestNames[i + 1] + ": ").c_str(), storedRequests[i].data(), storedRequests[i].size(), !verbose);
         }
     }
 }
@@ -73,8 +70,8 @@ bool Fuzzer::assertRequest()
 
         packet->serialize(resPacket.data());
 
-        storedRequests.emplace_back(std::move(reqPacket), size);
-        storedResponses.emplace_back(std::move(resPacket), packet->getSize());
+        storedRequests.emplace_back(std::move(reqPacket));
+        storedResponses.emplace_back(std::move(resPacket));
         
         sleep(timer);
     }
@@ -135,8 +132,8 @@ void Fuzzer::fuzz()
 
     // Backtrack fuzzing
     if (fuzz_level == 3 && i_response < storedResponses.size()) {
-        size = storedResponses[i_response].second;
-        memcpy(buffer, storedResponses[i_response].first.data(), size);
+        size = storedResponses[i_response].size();
+        memcpy(buffer, storedResponses[i_response].data(), size);
     }
     // Linear fuzzing or backtrack without sufficient
     else {

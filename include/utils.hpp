@@ -10,6 +10,7 @@
 #include <random>
 #include <sstream>
 #include <map>
+#include <bitset>
 
 /** @file
  *  This file contains the utility functions and definitions used in fuzzer.

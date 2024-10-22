@@ -1,5 +1,8 @@
 #include "../include/grammar.hpp"
 
+std::vector<std::vector<u8>> storedResponses; ///< Vector containing stored responses and its size.
+std::vector<std::vector<u8>> storedRequests; ///< Vector containing stored requests and its size.
+
 u32 finishCommand = (0x00 << 24) | (0x00 << 16) | (0xff << 8) | 0xfe;
 
 u8 M, H;
@@ -310,7 +313,7 @@ void Digests::serialize(u8* buffer)
         memcpy(buffer, mockedDigests, size);
         return;
     }
-
+    
     if (fuzz_level == 4) size += randomize(0, UINT8_MAX);
 
     serializeHeader(buffer);

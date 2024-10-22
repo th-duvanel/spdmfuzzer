@@ -2,13 +2,12 @@
 
 #include <functional>
 #include <cstdlib>
+#include <vector>
 
 /** @file
  *  This file contains the main fuzzing objects and functions.
  */
 
-extern std::vector<std::pair<std::vector<u8>, size_t>> storedResponses; ///< Vector containing stored responses and its size.
-extern std::vector<std::pair<std::vector<u8>, size_t>> storedRequests; ///< Vector containing stored requests and its size.
 
 /**
  * @class Fuzzer
