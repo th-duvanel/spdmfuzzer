@@ -5,8 +5,10 @@ std::vector<std::vector<u8>> storedRequests; ///< Vector containing stored reque
 
 u32 finishCommand = (0x00 << 24) | (0x00 << 16) | (0xff << 8) | 0xfe;
 
-u8 M, H;
+u8 M, H, S;
 u8 CERT_SENT = 0;
+
+u16 max_cert_length = 0;
 
 // To make the code more readable, we can define the namespaace right before coding.
 
@@ -32,6 +34,18 @@ inline std::map<u8, u8> HashAlgoSizes = {
     {4, 32},    // TPM_ALG_SHA3_256
     {5, 48},    // TPM_ALG_SHA3_384
     {6, 64}     // TPM_ALG_SHA3_512
+};
+
+inline std::map<u8, u8> AsymSignSize = {
+    {0, 0},     // Raw Bit Stream
+    {1, 256},   // TPM_ALG_RSASSA_2048
+    {2, 384},   // TPM_ALG_RSASSA_3072
+    {3, 384},   // TPM_ALG_RSAPSS_3072
+    {4, 256},   // TPM_ALG_ECDSA_ECC_NIST_P256
+    {5, 512},   // TPM_ALG_RSASSA_4096
+    {6, 512},    // TPM_ALG_RSAPSS_4096
+    {7, 384},   // TPM_ALG_ECDSA_ECC_NIST_P384
+    {8, 512}    // TPM_ALG_ECDSA_ECC_NIST_P521
 };
 
 // The real packet structure is stored in each packet class.
@@ -197,7 +211,13 @@ Algorithms::Algorithms(u8 fuzz_level) : responsePacket(RequestResponseCode["ALGO
         }
         else M = 0;
 
+        selected_algorithm = randomize(0, 31);
         base_asym_sel = 1 << randomize(0, 31);
+
+        if (selected_algorithm < 7) {
+            S = AsymSignSize[selected_algorithm];
+        }
+        else S = 0;
 
         selected_algorithm = randomize(0, 31);
         base_hash_sel = 1 << selected_algorithm;
@@ -324,6 +344,10 @@ void Digests::serialize(u8* buffer)
             buffer[5 + (i * H) + j] = digests[i][j];
         }
     }
+
+    for (u8 i = digests_qtt ; i < size ; i++) {
+        buffer[i] = randomize(0, UINT8_MAX);
+    } 
 }
 
 
@@ -335,6 +359,15 @@ Certificate::Certificate(u8 fuzz_level) : responsePacket(RequestResponseCode["CE
         
         return;
     }
+
+    if (fuzz_level == 4) size += randomize(0, UINT8_MAX);
+
+    param1 = 1 << randomize(0, 7);
+
+    if (max_cert_length)
+        max_cert_length = storedRequests[storedRequests.size() - 1][6] << 8 
+                        | storedRequests[storedRequests.size() - 1][7];
+
 }
 
 Certificate::~Certificate() {}
@@ -352,6 +385,7 @@ void Certificate::serialize(u8* buffer)
         }
         return;
     }
+
 }
 
 ChallengeAuth::ChallengeAuth(u8 fuzz_level) : responsePacket(RequestResponseCode["CHALLENGE_AUTH"])
@@ -366,8 +400,25 @@ ChallengeAuth::ChallengeAuth(u8 fuzz_level) : responsePacket(RequestResponseCode
 
     cert_chain_hash = new u8[H];
 
-    for(u8 i = 0 ; i < H ; i++) {
+    for (u8 i = 0 ; i < H ; i++) {
         cert_chain_hash[i] = randomize(0, UINT8_MAX);
+        mes_sum_hash[i] = randomize(0, UINT8_MAX);
+    }
+
+    for (u8 i = 0 ; i < 32 ; i++) {
+        nonce[i] = storedRequests[storedRequests.size() - 1][4 + i];
+    }
+
+    opaque_length = randomize(0, UINT16_MAX);
+    opaque_data = new u8[opaque_length];
+
+    for (u16 i = 0 ; i < opaque_length ; i++) {
+        opaque_data[i] = randomize(0, UINT8_MAX);
+    }
+
+    signature = new u8[S];
+    for (u8 i = 0 ; i < S ; i++) {
+        signature[i] = randomize(0, UINT8_MAX);
     }
 }
 
@@ -378,5 +429,33 @@ void ChallengeAuth::serialize(u8* buffer)
     if (fuzz_level >= 0) {
         memcpy(buffer, mockedChallengeAuth, size);
         return;
+    }
+
+    serializeHeader(buffer);
+
+    buffer[5] = param1;
+    buffer[6] = param2;
+
+    for (u8 i = 0 ; i < H ; i++) {
+        buffer[7 + i] = cert_chain_hash[i];
+        buffer[39 + i] = mes_sum_hash[i];
+    }
+
+    for (u8 i = 0 ; i < 32 ; i++) {
+        buffer[71 + i] = nonce[i];
+    }
+
+    assignBuffer(buffer, 103, opaque_length, 2);
+
+    for (u16 i = 0 ; i < opaque_length ; i++) {
+        buffer[105 + i] = opaque_data[i];
+    }
+
+    for (u16 i = 0 ; i < S ; i++) {
+        buffer[105 + opaque_length + i] = signature[i];
+    }
+
+    for (u16 i = 105 + opaque_length + S ; i < size ; i++) {
+        buffer[i] = randomize(0, UINT8_MAX);
     }
 }

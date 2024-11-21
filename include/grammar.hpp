@@ -227,7 +227,7 @@ private:
     u8 *mes_sum_hash;
     u16 opaque_length;
     u8 *opaque_data;
-    u8 *singature;
+    u8 *signature;
 
 public:
     ChallengeAuth(u8 fuzz_level = 0);
@@ -235,4 +235,21 @@ public:
     ~ChallengeAuth();
 
     void serialize(u8* buffer) override;
+};
+
+class Measurements : public responsePacket {
+private:
+    u8 num_of_blocks;
+    u32 meas_record_length;
+    u8 *meas_record;
+
+    u8 nonce[32];
+    u16 opaque_length;
+    u8 *opaque_data;
+    u8 *signature;
+};
+
+class Error : public responsePacket {
+private:
+    u8 *error_data;
 };
