@@ -1,43 +1,36 @@
 #include "../include/utils.hpp"
 
-void fuzzerError(const char* message, int code)
-{
-    std::cerr << "# [!] => " << message << ENDL;
-    exit(code);
+std::map<u8, u8> RequestToResponseCode = {
+    {0x84, 0x04},
+    {0xE1, 0x61},
+    {0xE3, 0x63},
+    {0x81, 0x01},
+    {0x82, 0x02},
+    {0x83, 0x03}
+};
+
+u8 MessageSPDM::getCode() {
+    return Buffer[2];
 }
 
-void fuzzerConsole(const char* message, bool verbose, char sign)
-{
-    if (!verbose) return;
-    std::cout << ENDL << "# [" << sign << "] => " << message << ENDL;
-}
-
-void socketConsole(const char* message, const void* buffer, size_t size, bool verbose)
-{
-    if (!verbose) return;
-    
-    std::cout << "# [+] => " << message;
-    std::stringstream ss;
-    const uint8_t* buf = static_cast<const uint8_t*>(buffer);
-    
-    for (size_t i = 0; i < size; ++i) {
-        ss << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(buf[i]) << " ";
-    }
-
-    std::cout << ss.str() << std::endl;
-}
-
-u64 randomize(u64 min, u64 max)
+u64 Randomize(u64 Min, u64 Max)
 {    
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<u64> dis(min, max);
+    std::uniform_int_distribution<u64> dis(Min, Max);
     return dis(gen);
 }
 
-void assignBuffer(u8* buffer, u64 pos, u64 value, u8 size)
+void AssignBuffer(u8* Buffer, u64 Position, u64 Value, u8 Size)
 {
-    for(u8 i = 0 ; i < size ; i++) {
-        buffer[pos + i] = (value >> (i * 8)) & 0xFF;
+    for (u8 i = 0 ; i < Size ; i++) {
+        Buffer[Position + i] = (Value >> (i * 8)) & 0xFF;
+    }
+}
+
+void RandomizeBuffer(u8 Start, u8 Size, u8 *Buffer)
+{
+    for (u8 i = Start; i < Size; i++) {
+        Buffer[i] = Randomize(0, UINT8_MAX);
     }
 }

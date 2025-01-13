@@ -1,7 +1,7 @@
 #pragma once
 
+#include <map>
 #include <iostream>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
 #include <vector>
@@ -9,62 +9,30 @@
 #include <iomanip>
 #include <random>
 #include <sstream>
-#include <map>
 #include <bitset>
-
-/** @file
- *  This file contains the utility functions and definitions used in fuzzer.
- */
-
-#define ENDL '\n'
+#include <memory>
+#include <sstream>
 
 #define u8  uint8_t
 #define u16 uint16_t
 #define u32 uint32_t
 #define u64 uint64_t
 
-/**
- * Error function that prints an error message and exits the program.
- * 
- * @param message Error message to be printed
- * @param code Error code to be printed
- */
-void fuzzerError(const char* message, int code);
+#define u_ptr std::unique_ptr
 
-/**
- * Function that prints a message to the console in the specified standard.
- * 
- * @param message Message to be printed
- * @param sign Console type sign
- * @param verbose Verbose mode
- */
-void fuzzerConsole(const char* message, bool verbose = false, char sign = '+');
+extern std::map<u8, u8> RequestToResponseCode;
 
-/**
- * Function that prints a message to the console in the specified standard.
- * 
- * @param message Message to be printed
- * @param buffer Buffer added to the message to be printed
- * @param size Buffer's size
- * @param verbose Verbose mode
- */
-void socketConsole(const char* message, const void* buffer, size_t size, bool verbose = false);
+struct MessageSPDM {
+    u32 Command;
+    u32 TransportType;
+    u32 Size;
+    u8 *Buffer;
 
-/**
- * Function that prints a message to the console in the specified standard.
- * 
- * @param message Message to be printed
- * @param buffer Buffer added to the message to be printed
- * @param size Buffer's size
- */
-u64 randomize(u64 min, u64 max);
+    u8 getCode();
+};
 
-/**
- * Function that assigns a value to a buffer in a specific position in network format.
- * 
- * @param buffer Buffer to be assigned
- * @param pos Position in the buffer to be assigned
- * @param value Value to be assigned
- * @param size Size of the value to be assigned
- */
-void assignBuffer(u8* buffer, u64 pos, u64 value, u8 size);
+u64 Randomize(u64 Min, u64 Max);
+
+void AssignBuffer(u8* Buffer, u64 Position, u64 Value, u8 Size);
+
+void RandomizeBuffer(u8 Start, u8 Size, u8 *Buffer);
