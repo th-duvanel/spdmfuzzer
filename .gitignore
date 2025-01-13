@@ -3,4 +3,5 @@
 /openspdm/
 /src/*.o
 /doxygen/
+/build/*
 spdmfuzzer
