@@ -1,39 +1,57 @@
 #include "../utils.hpp"
+#include "../observer.hpp"
 #include "../generation/mocks.hpp"
 
 class FuzzStrategy {
+protected:
+    Observer *Logger;
+
 public: 
+    FuzzStrategy(Observer *Logger);
+
     virtual ~FuzzStrategy() = default;
 
-    virtual MessageSPDM InterpretRequest(MessageSPDM &request) = 0;
+    virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) = 0;
 };
 
 class MockedStrategy : public FuzzStrategy {
 public:
-    virtual MessageSPDM InterpretRequest(MessageSPDM &request) override;
+    MockedStrategy(Observer *Logger);
+
+    virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
 class RandomStrategy : public FuzzStrategy {
 public:
-    virtual MessageSPDM InterpretRequest(MessageSPDM &request) override;
+    RandomStrategy(Observer *Logger);
+
+    virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
 class GrammaticalStrategy : public FuzzStrategy {
 public:
-    virtual MessageSPDM InterpretRequest(MessageSPDM &request) override;
+    GrammaticalStrategy(Observer *Logger);
+
+    virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
 class LinearStrategy : public GrammaticalStrategy {
 public:
-    virtual MessageSPDM InterpretRequest(MessageSPDM &request) override;
+    LinearStrategy(Observer *Logger);
+
+    virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
 class BacktrackStrategy : public GrammaticalStrategy {
 public:
-    virtual MessageSPDM InterpretRequest(MessageSPDM &request) override;
+    BacktrackStrategy(Observer *Logger);
+
+    virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
 class CheckpointStrategy : public GrammaticalStrategy {
 public:
-    virtual MessageSPDM InterpretRequest(MessageSPDM &request) override;
+    CheckpointStrategy(Observer *Logger);
+
+    virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
