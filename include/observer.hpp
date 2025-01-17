@@ -2,9 +2,11 @@
 
 #include "utils.hpp"
 
+inline std::map<std::string, u8> RequestResponseCode;
+
 class Observer {
 public:
-    virtual void onResponse(u8 code, MessageSPDM &Message) = 0;
+    virtual void onResponse(MessageSPDM &Message) = 0;
     virtual void onEvent(const std::string &type, const std::string &Message) = 0;
     virtual void ShowStart() = 0;
     virtual void ShowEnd() = 0;
@@ -18,7 +20,7 @@ private:
 public:
     ConsoleLogger(bool verbose);
 
-    void onResponse(u8 code, MessageSPDM &Message) override;
+    void onResponse(MessageSPDM &Message) override;
     void onEvent(const std::string &type, const std::string &Message) override;
     void ShowStart() override;
     void ShowEnd() override;
