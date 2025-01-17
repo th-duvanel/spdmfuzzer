@@ -3,8 +3,6 @@
 #include "utils.hpp"
 #include "observer.hpp"
 
-#include <netinet/in.h>
-
 class IO {
 protected:
     Observer *Logger;
@@ -12,8 +10,8 @@ protected:
     virtual bool AssertEnd(u32 command) = 0;
 
 public:
-    virtual bool ReadResponder(MessageSPDM &Message) = 0;
-    virtual bool WriteResponder(MessageSPDM &Message) = 0;
+    virtual bool ReadResponder(MessageSPDM *Message) = 0;
+    virtual bool WriteResponder(MessageSPDM *Message) = 0;
     virtual void DisconnectResponder() = 0;
     virtual void AcceptRequester() = 0;
 };
@@ -34,7 +32,7 @@ public:
     ~SocketTCP();
 
     void AcceptRequester() override;
-    bool ReadResponder(MessageSPDM &Message) override;
-    bool WriteResponder(MessageSPDM &Message) override;
+    bool ReadResponder(MessageSPDM *Message) override;
+    bool WriteResponder(MessageSPDM *Message) override;
     void DisconnectResponder() override;
 };

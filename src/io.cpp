@@ -7,8 +7,12 @@ SocketTCP::SocketTCP(Observer *Logger, int port, bool verbose)
     RequesterSocket = -1;
     AddressLength = sizeof(Address);
 
+    this->Logger = Logger;
+
+    system("killall SpdmRequesterTest > /dev/null 2>&1");
+
     if ((Socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        Logger->onEvent("IO/TCP", "Creation failed.");
+        this->Logger->onEvent("IO/TCP", "Creation failed.");
     }
 
     setsockopt(Socket, SOL_SOCKET, SO_REUSEADDR, &OptValues, sizeof(OptValues));
@@ -19,13 +23,15 @@ SocketTCP::SocketTCP(Observer *Logger, int port, bool verbose)
     Address.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (bind(Socket, (struct sockaddr*)&Address, sizeof(Address)) < 0) {
-        Logger->onEvent("IO/TCP", "Bind failed.");
+        this->Logger->onEvent("IO/TCP", "Bind failed.");
+        exit(1);
     }
     if (listen(Socket, 1) < 0) { // LISTENQ = 1
-        Logger->onEvent("IO/TCP", "Listen start failed");
+        this->Logger->onEvent("IO/TCP", "Listen start failed");
+        exit(1);
     }
 
-    Logger->onEvent("IO/TCP", "Responder listening on port " + std::to_string(port));
+    this->Logger->onEvent("IO/TCP", "Responder listening on port " + std::to_string(port));
 }
 
 SocketTCP::~SocketTCP()
@@ -36,7 +42,7 @@ SocketTCP::~SocketTCP()
 bool
 SocketTCP::CheckConnection()
 {
-    if (RequesterSocket > 0) {
+    if (RequesterSocket <= 0) {
         Logger->onEvent("IO/TCP", "Connection closed.");
         return false;
     }
@@ -61,61 +67,58 @@ SocketTCP::AcceptRequester()
     if ((RequesterSocket = accept(Socket, (struct sockaddr*)&Address, &AddressLength)) < 0) {
         Logger->onEvent("IO/TCP", "Accept failed.");
     }
-    Logger->onEvent("IO/TCP", "Requester connected.");
+    Logger->onEvent("IO/TCP", "Requester connected. Unexpected requests:");
 }
 
 bool
-SocketTCP::ReadResponder(MessageSPDM &Message)
+SocketTCP::ReadResponder(MessageSPDM *Message)
 {
-    if (!CheckConnection()) return false;
-
-    if (read(RequesterSocket, &Message.Command, 4) <= 0) {
+    // o request n eh a mesma variavel que o response
+    if (read(RequesterSocket, &Message->Command, 4) <= 0) {
         Logger->onEvent("IO/TCP", "Command read failed.");
+        return false;
     }
-    else if (AssertEnd(Message.Command)) return false;
+    else if (AssertEnd(Message->Command)) return false;
 
-    if (read(RequesterSocket, &Message.TransportType, 4) <= 0) {
+    if (read(RequesterSocket, &Message->TransportType, 4) <= 0) {
         Logger->onEvent("IO/TCP", "Transport type read failed.");
+        return false;
     }
-    if (read(RequesterSocket, &Message.Size, 4) <= 0) {
+    if (read(RequesterSocket, &Message->Size, 4) <= 0) {
         Logger->onEvent("IO/TCP", "Size read failed.");
+        return false;
     }
-
-    if (Message.Size) {
-        Message.Buffer = new u8[Message.Size];
-        if (read(RequesterSocket, Message.Buffer, Message.Size) <= 0) {
-            Logger->onEvent("IO/TCP", "Buffer read failed.");
-            free(Message.Buffer);
-            Message.Buffer = nullptr;
-            return false;
-        }
-    }
-    else {
-        Message.Buffer = nullptr;
+    Message->Size = ntohl(Message->Size);
+    
+    if (read(RequesterSocket, Message->Buffer, Message->Size) <= 0) {
+        Logger->onEvent("IO/TCP", "Buffer read failed.");
+        return false;
     }
     return true;
 }
 
 bool
-SocketTCP::WriteResponder(MessageSPDM &Message)
+SocketTCP::WriteResponder(MessageSPDM *Message)
 {
-    if (!CheckConnection()) return false;
+    Message->Command = htonl(Message->Command);
+    Message->TransportType = htonl(Message->TransportType);
+    Message->Size = htonl(Message->Size);
 
-    if (write(RequesterSocket, &Message.Command, 4) <= 0) {
+    if (write(RequesterSocket, &Message->Command, 4) <= 0) {
         Logger->onEvent("IO/TCP", "Command write failed.");
+        return false;
     }
-    if (write(RequesterSocket, &Message.TransportType, 4) <= 0) {
+    if (write(RequesterSocket, &Message->TransportType, 4) <= 0) {
         Logger->onEvent("IO/TCP", "Transport type write failed.");
+        return false;
     }
-    if (write(RequesterSocket, &Message.Size, 4) <= 0) {
+    if (write(RequesterSocket, &Message->Size, 4) <= 0) {
         Logger->onEvent("IO/TCP", "Size write failed.");
+        return false;
     }
-    if (Message.Size && write(RequesterSocket, Message.Buffer, Message.Size) <= 0) {
+    if (Message->Size && write(RequesterSocket, Message->Buffer, ntohl(Message->Size)) <= 0) {
         Logger->onEvent("IO/TCP", "Buffer write failed.");
-    }
-    if (Message.Buffer) {
-        free(Message.Buffer);
-        Message.Buffer = nullptr;
+        return false;
     }
     return true;
 }
