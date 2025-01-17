@@ -14,7 +14,7 @@
 # usa cabeçalhos de transporte.
 
 verify_deps() {
-    programs=("gcc" "git" "make" "g++" "wget" "tar" "awk" "cmake" "sponge" "xz")
+    programs=("gcc" "git" "make" "g++" "wget" "tar" "awk" "cmake" "sponge" "xz" "killall")
     missing_programs=()
 
     for program in "${programs[@]}"; do
