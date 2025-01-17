@@ -1,31 +1,11 @@
-#include "../include/fuzzing.hpp"
+#include "../include/io.hpp"
+#include "../include/generation/packet_factory.hpp"
+#include "../include/fuzzing/fuzzer.hpp"
 
-#define IP_ADDRESS "127.0.0.1"
-
-int TIMER = 0;
 int PORT = 2323;
-int FUZZ_LEVEL = 1;
+int FUZZ_LEVEL = 0;
 int MAX = 2048;
 bool VERBOSE = false;
-
-
-void checkArgs(int argc, char** argv);
-void help();
-
-
-int main(int argc, char** argv)
-{
-    checkArgs(argc, argv);
-
-    Fuzzer* fuzzer = new Fuzzer(PORT, TIMER, MAX, VERBOSE, FUZZ_LEVEL);
-
-    while (fuzzer->fuzzerLoop())
-    {
-        fuzzer->fuzz();
-    }
-
-    return 0;
-}
 
 void help()
 {
@@ -42,27 +22,38 @@ void help()
 
 void checkArgs(int argc, char** argv)
 {
-    if (argc > 9) fuzzerError("Too many arguments", 1);
+    if (argc > 9) FuzzerError("Too many arguments", 1);
 
     for (u8 i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) help(); 
-        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) VERBOSE = true;
-        else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--timeout") == 0) {
-            if (i + 1 < argc) TIMER = std::stoi(argv[++i]);
-            else fuzzerError("--timeout requires a value", 1);
-        } 
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            help(); 
+        }
+        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
+            VERBOSE = true;
+        }
         else if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--port") == 0) {
             if (i + 1 < argc) PORT = std::stoi(argv[++i]);
-            else fuzzerError("--port requires a value", 1);
+            else FuzzerError("--port requires a value", 1);
         }
         else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--fuzz") == 0) {
             if (i + 1 < argc) FUZZ_LEVEL = std::stoi(argv[++i]);
-            else fuzzerError("--fuzz requires a value", 1);
+            else FuzzerError("--fuzz requires a value", 1);
         }
         else if (strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--len") == 0) {
             if (i + 1 < argc) MAX = std::stoi(argv[++i]);
-            else fuzzerError("--len requires a value", 1);
+            else FuzzerError("--len requires a value", 1);
         }
-        else fuzzerError("Invalid argument", 1);
+        else FuzzerError("Invalid argument", 1);
     }
+}
+
+int main(int argc, char *argv[])
+{
+    Fuzzer *fuzzer;
+
+    fuzzer = new Fuzzer(PORT, FUZZ_LEVEL, MAX, VERBOSE);
+
+    fuzzer->Run();
+
+    return 0;
 }
