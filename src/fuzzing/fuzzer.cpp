@@ -5,31 +5,34 @@ Fuzzer::Fuzzer(int port, int fuzzStrategy, size_t bufferSize, bool verbose)
     Logger = new ConsoleLogger(verbose);
     Socket = new SocketTCP(Logger, port, verbose);
 
+    Response = new MessageSPDM(bufferSize);
+    Request = new MessageSPDM(bufferSize);
+
     switch (fuzzStrategy) {
         case 0:
-            Strategy = new MockedStrategy();
+            Strategy = new MockedStrategy(Logger);
             break;
         case 1:
-            Strategy = new RandomStrategy();
+            Strategy = new RandomStrategy(Logger);
             break;
         case 2:
-            Strategy = new LinearStrategy();
+            Strategy = new LinearStrategy(Logger);
             break;
         case 3:
-            Strategy = new BacktrackStrategy();
+            Strategy = new BacktrackStrategy(Logger);
             break;
         case 4:
-            Strategy = new CheckpointStrategy();
+            Strategy = new CheckpointStrategy(Logger);
             break;
         default:
-            Strategy = new RandomStrategy();
+            Strategy = new RandomStrategy(Logger);
             break;
     }
 }
 
 void Fuzzer::StartRequester()
 {
-    system("killall SpdmRequesterTest > /dev/null");
+    system("killall SpdmRequesterTest > /dev/null 2>&1");
     system("cd openspdm/build/bin/ && ./SpdmRequesterTest > /dev/null &");
 
     Logger->onEvent("+", "Requester started in the background.");
@@ -41,8 +44,9 @@ void Fuzzer::Round()
     StartRequester();
 
     while (Socket->ReadResponder(Request)) {
-        Response = Strategy->InterpretRequest(Request);
-
+        if (!Strategy->InterpretRequest(Request, Response)) {
+            break;
+        }
         if (!Socket->WriteResponder(Response)) {
             break;
         }

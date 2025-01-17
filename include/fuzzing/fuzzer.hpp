@@ -7,8 +7,8 @@ private:
     Observer *Logger;
     FuzzStrategy *Strategy;
 
-    MessageSPDM Response;
-    MessageSPDM Request;
+    MessageSPDM *Response;
+    MessageSPDM *Request;
     
     std::vector<std::vector<u8>> StoredResponses;
     std::vector<std::vector<u8>> StoredRequests;
