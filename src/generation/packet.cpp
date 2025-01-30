@@ -1,5 +1,27 @@
 #include "../../include/generation/packet.hpp"
 
+inline std::map<u8, u8> HashAlgoSizes = {
+    {0, 0},     // Raw Bit Stream
+    {1, 32},    // TPM_ALG_SHA_256
+    {2, 48},    // TPM_ALG_SHA_384
+    {3, 64},    // TPM_ALG_SHA_512
+    {4, 32},    // TPM_ALG_SHA3_256
+    {5, 48},    // TPM_ALG_SHA3_384
+    {6, 64}     // TPM_ALG_SHA3_512
+};
+
+inline std::map<u8, u8> AsymSignSize = {
+    {0, 0},     // Raw Bit Stream
+    {1, 256},   // TPM_ALG_RSASSA_2048
+    {2, 384},   // TPM_ALG_RSASSA_3072
+    {3, 384},   // TPM_ALG_RSAPSS_3072
+    {4, 256},   // TPM_ALG_ECDSA_ECC_NIST_P256
+    {5, 512},   // TPM_ALG_RSASSA_4096
+    {6, 512},   // TPM_ALG_RSAPSS_4096
+    {7, 384},   // TPM_ALG_ECDSA_ECC_NIST_P384
+    {8, 512}    // TPM_ALG_ECDSA_ECC_NIST_P521
+};
+
 SPDMPacket::SPDMPacket(u8 code, u8 fuzzStrategy)
 {
     Size = 5;
@@ -99,13 +121,56 @@ Capabilities::SerializePacket(u8 *Buffer)
 
 Algorithms::Algorithms(NegotiateAlgorithms *packetArgs, u8 fuzzStrategy) : SPDMPacket(0x63, fuzzStrategy)
 {
+    if (FuzzStrategy != 3) {
+        MeasSpecificationSelected = Randomize(0, UINT8_MAX);
+        BaseAsymmetricSelected = Randomize(0, UINT32_MAX);
+        MeasHashAlgorithms = Randomize(0, UINT32_MAX);
+        BaseHashSelected = Randomize(0, UINT32_MAX);
+    }
+    else {
+        u32 selected_algorithm = Randomize(0, 31);
 
+        MeasSpecificationSelected = 1 << Randomize(0, 7);
+        MeasHashAlgorithms = 1 << selected_algorithm;
+
+    }
 }
 
 int
 Algorithms::SerializePacket(u8 *Buffer)
 {
+    if (FuzzStrategy == 2) {
+        Size += Randomize(0, UINT8_MAX);
+    }
 
+    SerializeHeader(Buffer);
+
+    AssignBuffer(Buffer, 5, Size - 1, 2);
+    AssignBuffer(Buffer, 9, MeasHashAlgorithms, 4);
+    AssignBuffer(Buffer, 13, BaseAsymmetricSelected, 4);
+    AssignBuffer(Buffer, 17, BaseHashSelected, 4);
+    AssignBuffer(Buffer, 35, Reserved3, 2);
+
+    Buffer[7] = MeasSpecificationSelected;
+    Buffer[8] = Reserved;
+    Buffer[33] = ExtAsymCount;
+    Buffer[34] = ExtHashCount;
+
+    if (ExtAsymCount > 0) {
+
+    }
+
+    if (ExtHashCount > 0) {
+
+    }
+
+    for (u8 i = 0 ; i < 12 ; i++) {
+        Buffer[21 + i] = Reserved2[i];
+    }
+
+    for (u8 i = 45 ; i < Size ; i++) {
+        Buffer[i] = Randomize(0, UINT8_MAX);
+    }
 }
 
 Digests::Digests(u8 fuzzStrategy) : SPDMPacket(0x01, fuzzStrategy)

@@ -1,5 +1,7 @@
 #include "../utils.hpp"
 
+extern std::map<u8, u8> HashAlgoSizes;
+extern std::map<u8, u8> AsymSignSize;
 class SPDMPacket {
 protected:
     u8 FuzzStrategy;
@@ -38,7 +40,7 @@ private:
 public:
     Version(u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
 
 class Capabilities : public SPDMPacket {
@@ -58,7 +60,7 @@ private:
 public:
     Capabilities(u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
 
 struct ExtendedAlgorithm {
@@ -93,8 +95,8 @@ private:
     u32 BaseHashSelected;
 
     u8 Reserved2[12];
-    u8 ExtendedAsymmetricSelected;
-    u8 ExtendedHashSelected;
+    u8 ExtAsymCount;
+    u8 ExtHashCount;
 
     u16 Reserved3;
 
@@ -104,7 +106,7 @@ private:
 public:
     Algorithms(NegotiateAlgorithms *negAlgorithms, u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
 
 class Digests : public SPDMPacket {
@@ -114,7 +116,7 @@ private:
 public:
     Digests(u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
 
 class Certificate : public SPDMPacket {
@@ -132,7 +134,7 @@ private:
 public:
     Certificate(u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
 
 class ChallengeAuth : public SPDMPacket {
@@ -147,7 +149,7 @@ private:
 public:
     ChallengeAuth(void *packetArgs, u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
 
 class Measurements : public SPDMPacket {
@@ -164,7 +166,7 @@ private:
 public:
     Measurements(void *packetArgs, u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
 
 class Error : public SPDMPacket {
@@ -174,5 +176,5 @@ private:
 public:
     Error(void *packetArgs, u8 fuzzStrategy);
 
-    virtual int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override; 
 };
