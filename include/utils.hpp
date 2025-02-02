@@ -13,6 +13,7 @@
 #include <memory>
 #include <sstream>
 #include <netinet/in.h>
+#include <algorithm>
 
 #define u8  uint8_t
 #define u16 uint16_t
@@ -33,8 +34,10 @@ public:
 
     MessageSPDM(u64 Size);
 
-    u8 getCode();
+    u8 getCode() const;
 };
+
+MessageSPDM* findMessage(std::vector<MessageSPDM>& messages, u8 code);
 
 u64 Randomize(u64 Min, u64 Max);
 

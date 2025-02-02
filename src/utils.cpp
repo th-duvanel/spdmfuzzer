@@ -15,8 +15,20 @@ MessageSPDM::MessageSPDM(u64 Size)
     Buffer = new u8[Size];
 }
 
-u8 MessageSPDM::getCode() {
+u8 MessageSPDM::getCode() const {
     return Buffer[2];
+}
+
+MessageSPDM* findMessage(std::vector<MessageSPDM>& messages, u8 code) {
+    auto it = std::find_if(messages.begin(), messages.end(), [code](const MessageSPDM& msg) {
+        return msg.getCode() == code;
+    });
+
+    if (it != messages.end()) {
+        return &(*it);
+    } else {
+        return nullptr;
+    }
 }
 
 u64 Randomize(u64 Min, u64 Max)
