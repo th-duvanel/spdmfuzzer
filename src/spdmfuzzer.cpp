@@ -51,6 +51,8 @@ int main(int argc, char *argv[])
 {
     Fuzzer *fuzzer;
 
+    checkArgs(argc, argv);
+
     fuzzer = new Fuzzer(PORT, FUZZ_LEVEL, MAX, VERBOSE);
 
     fuzzer->Run();
