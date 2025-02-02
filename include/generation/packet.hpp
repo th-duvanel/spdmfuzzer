@@ -24,6 +24,8 @@ public:
     virtual ~SPDMPacket() = default;
     
     virtual int SerializePacket(u8 *Buffer) = 0;    
+
+    virtual int* GetSelectedAlgorithms() { return nullptr; }
 };
 
 class Version : public SPDMPacket {
@@ -109,7 +111,7 @@ public:
 
     int SerializePacket(u8 *Buffer) override;
 
-    int* GetSelectedAlgorithms();
+    int* GetSelectedAlgorithms() override;
 };
 
 class Digests : public SPDMPacket {
@@ -179,7 +181,7 @@ private:
     u8 *ErrorData;
 
 public:
-    Error(void *packetArgs, u8 fuzzStrategy);
+    Error(u8 fuzzStrategy);
 
     int SerializePacket(u8 *Buffer) override; 
 };
