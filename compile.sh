@@ -13,19 +13,32 @@
 # do openspdm. Inclui o emulador de testes que
 # usa cabeçalhos de transporte.
 
+declare -A programs=(
+    ["gcc"]="gcc"
+    ["git"]="git"
+    ["make"]="make"
+    ["g++"]="g++"
+    ["wget"]="wget"
+    ["tar"]="tar"
+    ["awk"]="gawk"
+    ["cmake"]="cmake"
+    ["sponge"]="moreutils"
+    ["xz"]="xz-utils"
+    ["killall"]="psmisc"
+)
+
 verify_deps() {
-    programs=("gcc" "git" "make" "g++" "wget" "tar" "awk" "cmake" "sponge" "xz" "killall")
     missing_programs=()
 
-    for program in "${programs[@]}"; do
+    for program in "${!programs[@]}"; do
         if ! command -v "$program" &> /dev/null; then
-            missing_programs+=("$program")
+            missing_programs+=("${programs[$program]}")
         fi
     done
 
     if [ ${#missing_programs[@]} -ne 0 ]; then
-        echo "The following programs are missing: ${missing_programs[*]}"
-
+        echo "The following packages are missing: ${missing_programs[*]}"
+        echo "You can install them by running: sudo apt-get install ${missing_programs[*]}"
         exit 1
     else
         echo "All necessary programs are installed. Continuing..."
