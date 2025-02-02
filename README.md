@@ -52,6 +52,7 @@ make 4.3
 cmake 3.22.1
 moreutils 0.66-1 # sponge
 xz-utils 5.2.5
+psmisc
 ```
 
 To do this, simply execute in the current folder:
@@ -96,54 +97,16 @@ By applying this .pcapng in Wireshark, you will have a complete view of the pack
 
 ## Execution (help)
 
-spdmfuzzer has some command-line arguments. One of them is when you encounter an unexpected response, it can wait a few seconds for the user to observe what happened. By default, it uses 3 seconds. To set the flag, simply:
-
-```console
-foo@spdmfuzzer:~$ ./spdmfuzzer -t <time(s)>
-```
-
-### Example
-
 ```console
 foo@spdmfuzzer:~$ ./spdmfuzzer
-# [+] => Responder (server) listening on port 2323
-# [+] => Requester (client) started in the background
-# [+] => Requester (client) connected
-
-# [+] => Received command: 00 00 00 01
-# [+] => Received transport type: 00 00 00 01
-# [+] => Received buffer size: 00 00 00 05
-# [+] => Received buffer: 05 10 84 00 00
-
-# [+] => Sent command: 00 00 00 01
-# [+] => Sent transport type: 00 00 00 01
-# [+] => Sent buffer size: 00 00 00 0b
-# [+] => Sent buffer: 05 50 04 00 05 00 02 07 b7 0c 65
-
-# [+] => Received command: 00 00 00 01
-# [+] => Received transport type: 00 00 00 01
-# [+] => Received buffer size: 00 00 00 05
-# [+] => Received buffer: 05 10 e1 00 00
-# [+] => wow! this is not expected.
+# [*] => Fuzzer started the round.
+# [+] => Requester started in the background.
+# [IO/TCP] => Requester connected. Unexpected requests:
+# [1] => GET_CAPABILITIES
+# [1] => NEGOTIATE_ALGORITHMS
+# [IO/TCP] => Requester disconnected.
+# [-] => Fuzzer finished the round.
 ```
-
-In this execution, you can see that the fuzzer received an unexpected response. Since no time flag was set, 3 seconds are given for the user to observe the unexpected response.
-
-## Documentation Generation
-
-Two dependencies are required for full visualization:
-```console
-doxygen
-graphviz
-```
-
-This repository supports documentation via doxygen. If desired, simply execute:
-
-```console
-foo@spdmfuzzer:~$ make doxygen
-```
-
-Access the index.html in your browser inside the doxygen folder for the complete documentation. Alternatively, you can access it in LaTeX format as well. Note that the documentation is in English.
 
 ## Environment Specifications Used
 ```console
