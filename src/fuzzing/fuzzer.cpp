@@ -1,6 +1,6 @@
 #include "../../include/fuzzing/fuzzer.hpp"
 
-Fuzzer::Fuzzer(int port, int fuzzStrategy, size_t bufferSize, bool verbose)
+Fuzzer::Fuzzer(int port, int fuzzStrategy, size_t bufferSize, bool verbose, int extra)
 {
     Logger = new ConsoleLogger(verbose);
     Socket = new SocketTCP(Logger, port, verbose);
@@ -16,16 +16,19 @@ Fuzzer::Fuzzer(int port, int fuzzStrategy, size_t bufferSize, bool verbose)
             Strategy = new RandomStrategy(Logger);
             break;
         case 2:
-            Strategy = new LinearStrategy(Logger);
+            Strategy = new SizedStrategy(Logger);
             break;
         case 3:
-            Strategy = new BacktrackStrategy(Logger);
+            Strategy = new GrammaticalStrategy(Logger);
             break;
         case 4:
-            Strategy = new CheckpointStrategy(Logger);
+            Strategy = new BacktrackStrategy(Logger);
+            break;
+        case 5:
+            Strategy = new CheckpointStrategy(Logger, extra);
             break;
         default:
-            Strategy = new RandomStrategy(Logger);
+            Strategy = new GrammaticalStrategy(Logger);
             break;
     }
 }

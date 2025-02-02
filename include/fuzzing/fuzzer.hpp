@@ -9,13 +9,10 @@ private:
 
     MessageSPDM *Response;
     MessageSPDM *Request;
-    
-    std::vector<std::vector<u8>> StoredResponses;
-    std::vector<std::vector<u8>> StoredRequests;
 
     void StartRequester();
 public:
-    Fuzzer(int port, int fuzzStrategy, size_t bufferSize, bool verbose);
+    Fuzzer(int port, int fuzzStrategy, size_t bufferSize, bool verbose, int extra = 0);
 
     void Round();
     void Run();
