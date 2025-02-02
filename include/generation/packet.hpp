@@ -2,6 +2,7 @@
 
 extern std::map<u8, u8> HashAlgoSizes;
 extern std::map<u8, u8> AsymSignSize;
+
 class SPDMPacket {
 protected:
     u8 FuzzStrategy;
@@ -104,9 +105,11 @@ private:
     ExtendedAlgorithm *ExtHashSel;
 
 public:
-    Algorithms(NegotiateAlgorithms *negAlgorithms, u8 fuzzStrategy);
+    Algorithms(u8 fuzzStrategy);
 
-    int SerializePacket(u8 *Buffer) override; 
+    int SerializePacket(u8 *Buffer) override;
+
+    int* GetSelectedAlgorithms();
 };
 
 class Digests : public SPDMPacket {
@@ -114,7 +117,7 @@ private:
     u8 **DigestsBuffer;
 
 public:
-    Digests(u8 fuzzStrategy);
+    Digests(u8 fuzzStrategy, u8 H_HashSize);
 
     int SerializePacket(u8 *Buffer) override; 
 };
@@ -139,15 +142,17 @@ public:
 
 class ChallengeAuth : public SPDMPacket {
 private:
+    u8 S_SignatureSize;
+
     u8 *CertificateChainHash;
     u8 Nonce[32];
-    u8 MeasSummaryHash;
+    u8 *MeasSummaryHash;
     u16 OpaqueLength;
     u8 *OpaqueData;
     u8 *Signature;
 
 public:
-    ChallengeAuth(void *packetArgs, u8 fuzzStrategy);
+    ChallengeAuth(u8 fuzzStrategy, u8 H_HashSize, u8 S_SignatureSize);
 
     int SerializePacket(u8 *Buffer) override; 
 };
@@ -164,7 +169,7 @@ private:
     u8 *Signature;
 
 public:
-    Measurements(void *packetArgs, u8 fuzzStrategy);
+    Measurements(u8 fuzzStrategy, u8 S_SignatureSize);
 
     int SerializePacket(u8 *Buffer) override; 
 };

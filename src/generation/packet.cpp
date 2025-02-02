@@ -119,20 +119,46 @@ Capabilities::SerializePacket(u8 *Buffer)
     RandomizeBuffer(13, Size, Buffer);
 }
 
-Algorithms::Algorithms(NegotiateAlgorithms *packetArgs, u8 fuzzStrategy) : SPDMPacket(0x63, fuzzStrategy)
+Algorithms::Algorithms(u8 fuzzStrategy) : SPDMPacket(0x63, fuzzStrategy)
 {
+    Reserved = Randomize(0, UINT8_MAX);
+    Reserved3 = Randomize(0, UINT16_MAX);
+
+    for (u8 i = 0 ; i < 12 ; i++) {
+        Reserved2[i] = Randomize(0, UINT8_MAX);
+    }
+
     if (FuzzStrategy != 3) {
         MeasSpecificationSelected = Randomize(0, UINT8_MAX);
         BaseAsymmetricSelected = Randomize(0, UINT32_MAX);
         MeasHashAlgorithms = Randomize(0, UINT32_MAX);
         BaseHashSelected = Randomize(0, UINT32_MAX);
+
+        ExtAsymCount = Randomize(0, UINT8_MAX);
+        ExtHashCount = Randomize(0, UINT8_MAX);
     }
     else {
-        u32 selected_algorithm = Randomize(0, 31);
-
         MeasSpecificationSelected = 1 << Randomize(0, 7);
-        MeasHashAlgorithms = 1 << selected_algorithm;
+        MeasHashAlgorithms = 1 << Randomize(0, 127);
+        BaseAsymmetricSelected = 1 << Randomize(0, 31);
+        BaseHashSelected = 1 << Randomize(0, 31);
 
+        ExtAsymCount = Randomize(0, 1);
+        ExtHashCount = Randomize(0, 1);
+    }
+
+    if (ExtAsymCount > 0) {
+        ExtAsymSel = new ExtendedAlgorithm[ExtAsymCount];
+        ExtAsymSel->RegistryID = Randomize(0, UINT8_MAX);
+        ExtAsymSel->Reserved = Randomize(0, UINT8_MAX);
+        ExtAsymSel->AlgorithmID = Randomize(0, UINT16_MAX);
+    }
+
+    if (ExtHashCount > 0) {
+        ExtHashSel = new ExtendedAlgorithm[ExtHashCount];
+        ExtHashSel->RegistryID = Randomize(0, UINT8_MAX);
+        ExtHashSel->Reserved = Randomize(0, UINT8_MAX);
+        ExtHashSel->AlgorithmID = Randomize(0, UINT16_MAX);
     }
 }
 
@@ -156,32 +182,98 @@ Algorithms::SerializePacket(u8 *Buffer)
     Buffer[33] = ExtAsymCount;
     Buffer[34] = ExtHashCount;
 
-    if (ExtAsymCount > 0) {
-
+    for (u8 i = 0 ; i < ExtAsymCount ; i++) {
+        Buffer[37 + i] = ExtAsymSel[i].RegistryID;
+        Buffer[38 + i] = ExtAsymSel[i].Reserved;
+        AssignBuffer(Buffer, 39 + (i * 2), ExtAsymSel[i].AlgorithmID, 2);
     }
 
-    if (ExtHashCount > 0) {
-
+    for (u8 i = 0 ; i < ExtHashCount ; i++) {
+        Buffer[37 + (ExtAsymCount * 4) + i] = ExtHashSel[i].RegistryID;
+        Buffer[38 + (ExtAsymCount * 4) + i] = ExtHashSel[i].Reserved;
+        AssignBuffer(Buffer, 39 + (ExtAsymCount * 4) + (i * 2), ExtHashSel[i].AlgorithmID, 2);
     }
 
     for (u8 i = 0 ; i < 12 ; i++) {
         Buffer[21 + i] = Reserved2[i];
     }
 
-    for (u8 i = 45 ; i < Size ; i++) {
+    for (u8 i = 37 + (ExtAsymCount + ExtHashCount) * 4 ; i < Size ; i++) {
         Buffer[i] = Randomize(0, UINT8_MAX);
     }
 }
 
-Digests::Digests(u8 fuzzStrategy) : SPDMPacket(0x01, fuzzStrategy)
+int*
+Algorithms::GetSelectedAlgorithms()
 {
+    int *selectedAlgorithms = new int[3];
 
+    u8 selected_m = std::bitset<8>(MeasSpecificationSelected).count();
+    u8 selected_h = std::bitset<8>(BaseHashSelected).count();
+    u8 selected_s = std::bitset<8>(BaseAsymmetricSelected).count();
+
+    if (selected_m < 7) {
+        selectedAlgorithms[0] = HashAlgoSizes[selected_m];
+    }
+    else {
+        selectedAlgorithms[0] = 0;
+    }
+
+    if (selected_h < 7) {
+        selectedAlgorithms[1] = HashAlgoSizes[selected_h];
+    }
+    else {
+        selectedAlgorithms[1] = 0;
+    }
+
+    if (selected_s < 7) {
+        selectedAlgorithms[2] = AsymSignSize[selected_s];
+    }
+    else {
+        selectedAlgorithms[2] = 0;
+    }
+
+    return selectedAlgorithms;
+}
+
+Digests::Digests(u8 fuzzStrategy, u8 H_HashSize) : SPDMPacket(0x01, fuzzStrategy)
+{
+    u8 digests_quantity = Randomize(0, 8);
+
+    for (u8 i = 0, Param2 = 0 ; i < digests_quantity ; i++) {
+        Param2 |= (1 << (7 - i));
+    }
+
+    DigestsBuffer = new u8*[digests_quantity];
+    for (u8 i = 0 ; i < digests_quantity ; i++) {
+        DigestsBuffer[i] = new u8[H_HashSize];
+        for (u8 j = 0 ; j < H_HashSize ; j++) {
+            DigestsBuffer[i][j] = Randomize(0, UINT8_MAX);
+        }
+    }
 }
 
 int
 Digests::SerializePacket(u8 *Buffer)
 {
+    u8 digests_quantity = std::bitset<8>(Param2).count();
+    u8 hash_size = Size / digests_quantity;
 
+    if (FuzzStrategy == 2) {
+        Size += Randomize(0, UINT8_MAX);
+    }
+
+    SerializeHeader(Buffer);
+
+    for (u8 i = 0 ; i < digests_quantity ; i++) {
+        for (u8 j = 0 ; j < hash_size ; j++) {
+            Buffer[5 + (i * hash_size) + j] = DigestsBuffer[i][j];
+        }
+    }
+
+    for (u8 i = digests_quantity ; i < Size ; i++) {
+        Buffer[5 + i] = Randomize(0, UINT8_MAX);
+    }
 }
 
 Certificate::Certificate(u8 fuzzStrategy) : SPDMPacket(0x02, fuzzStrategy)
@@ -193,37 +285,174 @@ int
 Certificate::SerializePacket(u8 *Buffer)
 {
 
+    if (FuzzStrategy == 2) {
+        Size += Randomize(0, UINT8_MAX);
+    }
+
+    SerializeHeader(Buffer);
+
+
 }
 
-ChallengeAuth::ChallengeAuth(void *packetArgs, u8 fuzzStrategy) : SPDMPacket(0x03, fuzzStrategy)
+ChallengeAuth::ChallengeAuth(u8 fuzzStrategy, u8 H_HashSize, u8 S_SignatureSize) : SPDMPacket(0x03, fuzzStrategy)
 {
+    Param1 |= 1 << Randomize(0, 7);
+    Param2 = Randomize(0, UINT8_MAX);
+    OpaqueLength = Randomize(0, UINT16_MAX);
+    OpaqueData = new u8[OpaqueLength];
 
+    CertificateChainHash = new u8[H_HashSize];
+
+    for (u8 i = 0 ; i < H_HashSize ; i++) {
+        CertificateChainHash[i] = Randomize(0, UINT8_MAX);
+        MeasSummaryHash[i] = Randomize(0, UINT8_MAX);
+    }
+
+    for (u8 i = 0 ; i < 32 ; i++) {
+        Nonce[i] = Randomize(0, UINT8_MAX);
+    }
+
+    for (u8 i = 0 ; i < OpaqueLength ; i++) {
+        OpaqueData[i] = Randomize(0, UINT8_MAX);
+    }
+
+    Signature = new u8[S_SignatureSize];
+    for (u8 i = 0 ; i < S_SignatureSize ; i++) {
+        Signature[i] = Randomize(0, UINT8_MAX);
+    }
 }
 
 int
 ChallengeAuth::SerializePacket(u8 *Buffer)
 {
+    // Message has a fixed size of 44 bytes + 2 * HashSize + Signature
+    u8 hash_size = (Size - 44 - S_SignatureSize) / 2;
 
+    if (FuzzStrategy == 2) {
+        Size += Randomize(0, UINT8_MAX);
+    }
+
+    SerializeHeader(Buffer);
+
+    for (u8 i = 0 ; i < hash_size ; i++) {
+        Buffer[5 + i] = CertificateChainHash[i];
+        Buffer[37 + i] = MeasSummaryHash[i];
+    }
+
+    for (u8 i = 0 ; i < 32 ; i++) {
+        Buffer[37 + hash_size + i] = Nonce[i];
+    }
+
+    for (u8 i = 0 ; i < OpaqueLength ; i++) {
+        Buffer[69 + hash_size + i] = OpaqueData[i];
+    }
+
+    for (u8 i = 0 ; i < S_SignatureSize ; i++) {
+        Buffer[69 + hash_size + OpaqueLength + i] = Signature[i];
+    }
+
+    for (u8 i = 69 + hash_size + OpaqueLength + S_SignatureSize ; i < Size ; i++) {
+        Buffer[i] = Randomize(0, UINT8_MAX);
+    }
 }
 
-Measurements::Measurements(void *packetArgs, u8 fuzzStrategy) : SPDMPacket(0x60, fuzzStrategy)
+Measurements::Measurements(u8 fuzzStrategy, u8 S_SignatureSize) : SPDMPacket(0x60, fuzzStrategy)
 {
+    if (fuzzStrategy == 3) {
+        if (Param2) {
+            NumOfBlocks = Randomize(0, UINT8_MAX);
+            MeasRecordLength = Randomize(0, UINT32_MAX);
+        }
+        else {
+            NumOfBlocks = 0;
+            MeasRecordLength = 0;
+        }        
 
+        for (u8 i = 0 ; i < MeasRecordLength ; i++) {
+            MeasRecord[i] = Randomize(0, UINT8_MAX);
+        }
+    }
+    else {
+        NumOfBlocks = Randomize(0, UINT8_MAX);
+        MeasRecordLength = Randomize(0, UINT32_MAX);
+
+        for (u8 i = 0 ; i < MeasRecordLength + Randomize(0, UINT8_MAX) ; i++) {
+            MeasRecord[i] = Randomize(0, UINT8_MAX);
+        }
+    }
+
+    for (u8 i = 0 ; i < 32 ; i++) {
+        Nonce[i] = Randomize(0, UINT8_MAX);
+    }
+
+    OpaqueLength = Randomize(0, UINT16_MAX);
+    for (u8 i = 0 ; fuzzStrategy == 3 && i < OpaqueLength ; i++) {
+        OpaqueData[i] = Randomize(0, UINT8_MAX);
+    }
+    for (u8 i = 0 ; fuzzStrategy != 3 && i < OpaqueLength + Randomize(0, UINT8_MAX) ; i++) {
+        OpaqueData[i] = Randomize(0, UINT8_MAX);
+    }
+
+    for (u8 i = 0 ; i < S_SignatureSize ; i++) {
+        Signature[i] = Randomize(0, UINT8_MAX);
+    }
 }
 
 int
 Measurements::SerializePacket(u8 *Buffer)
 {
+    // Message has a fixed size of 43 bytes + MeasRecordLength + OpaqueLength + SignatureSize
+    u8 signature_size = Size - 43 - MeasRecordLength - OpaqueLength;
 
+    if (FuzzStrategy == 2) {
+        Size += Randomize(0, UINT8_MAX);
+    }
+
+    SerializeHeader(Buffer);
+
+    Buffer[5] = NumOfBlocks;
+    Buffer[41 + MeasRecordLength] = OpaqueLength;
+    AssignBuffer(Buffer, 6, MeasRecordLength, 3);
+
+    for (u8 i = 0 ; i < MeasRecordLength ; i++) {
+        Buffer[9 + i] = MeasRecord[i];
+    }
+
+    for (u8 i = 0 ; i < 32 ; i++) {
+        Buffer[9 + MeasRecordLength + i] = Nonce[i];
+    }
+
+    for (u8 i = 0 ; i < OpaqueLength ; i++) {
+        Buffer[43 + MeasRecordLength + i] = OpaqueData[i];
+    }
+
+    for (u8 i = 0 ; i < signature_size ; i++) {
+        Buffer[43 + MeasRecordLength + OpaqueLength + i] = Signature[i];
+    }
 }
 
 Error::Error(void *packetArgs, u8 fuzzStrategy) : SPDMPacket(0x7F, fuzzStrategy)
 {
-
+    Param1 = Randomize(0, UINT8_MAX);
+    Param2 = Randomize(0, UINT8_MAX);
 }
 
 int
 Error::SerializePacket(u8 *Buffer)
 {
+    u8 error_size = Size - 5;
 
+    if (FuzzStrategy == 2) {
+        Size += Randomize(0, UINT8_MAX);
+    }
+
+    SerializeHeader(Buffer);
+
+    for (u8 i = 0 ; i < error_size ; i++) {
+        Buffer[5 + i] = ErrorData[i];
+    }
+
+    for (u8 i = 0 ; i < Size ; i++) {
+        Buffer[5 + error_size + i] = Randomize(0, UINT8_MAX);
+    }
 }
