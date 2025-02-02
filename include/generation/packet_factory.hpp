@@ -1,3 +1,5 @@
+#pragma once
+
 #include "packet.hpp"
 #include "../utils.hpp"
 
@@ -8,5 +10,5 @@ private:
     u8 S_SignatureSize;
     
 public:
-    static void CreatePacket(void *packetArgs, u8 Code, u8 fuzzStrategy, MessageSPDM &response);
+    void CreatePacket(u8 Code, u8 fuzzStrategy, MessageSPDM *response);
 };
