@@ -25,36 +25,41 @@ inline std::map<u8, std::string> ResponseRequestCode = {
 
 ConsoleLogger::ConsoleLogger(bool verbose) : verbose(verbose) {}
 
-void ConsoleLogger::onResponse(MessageSPDM &Message)
+void ConsoleLogger::onResponse(MessageSPDM &Message, u8 fuzzStrategy)
 {
-    std::cout << "# [+] => " << ResponseRequestCode[Message.getCode()];
-    if (verbose) {
-        std::stringstream ss;
-        std::cout << ": ";
+    if (Message.getCode() == 0x84) return;
+    
+    std::cout << "# [" << (int)fuzzStrategy << "] => " << ResponseRequestCode[Message.getCode()];
 
-        const uint8_t* buf = static_cast<const uint8_t*>(Message.Buffer);
-        
-        for (size_t i = 0; i < Message.Size; ++i) {
-            ss << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(buf[i]) << " ";
-        }
+    std::stringstream ss;
+    std::cout << ": ";
 
-        std::cout << ss.str() << ENDL;
-        return;
+    const uint8_t* buf = static_cast<const uint8_t*>(Message.Buffer);
+    
+    for (size_t i = 0; i < Message.Size; ++i) {
+        ss << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(buf[i]) << " ";
     }
+
+    std::cout << ss.str() << ENDL;
+    return;
+    
     std::cout << ENDL;
 }
 
 void ConsoleLogger::onEvent(const std::string &type, const std::string &Message)
 {
-    std::cout << "# [" << type << "] => " << Message << ENDL;
+    if (verbose)
+        std::cout << "# [" << type << "] => " << Message << ENDL;
 }
 
 void ConsoleLogger::ShowStart()
 {
-    std::cout << "# [*] => Fuzzer started the round." << ENDL;
+    if (verbose)
+        std::cout << "# [*] => Fuzzer started the round." << ENDL;
 }
 
 void ConsoleLogger::ShowEnd()
 {
-    std::cout << "# [-] => Fuzzer finished the round." << ENDL << ENDL;
+    if (verbose)
+        std::cout << "# [-] => Fuzzer finished the round." << ENDL << ENDL;
 }
