@@ -1,10 +1,13 @@
-#include "../utils.hpp"
 #include "../observer.hpp"
 #include "../generation/mocks.hpp"
+#include "../generation/packet_factory.hpp"
 
 class FuzzStrategy {
 protected:
     Observer *Logger;
+    PacketFactory *Factory;
+
+    bool certifiedSent;
 
 public: 
     FuzzStrategy(Observer *Logger);
@@ -12,6 +15,8 @@ public:
     virtual ~FuzzStrategy() = default;
 
     virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) = 0;
+
+    bool CheckRequest(MessageSPDM *request, MessageSPDM *response);    
 };
 
 class MockedStrategy : public FuzzStrategy {
@@ -35,14 +40,17 @@ public:
     virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
-class LinearStrategy : public GrammaticalStrategy {
+class SizedStrategy : public GrammaticalStrategy {
 public:
-    LinearStrategy(Observer *Logger);
+    SizedStrategy(Observer *Logger);
 
     virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
 class BacktrackStrategy : public GrammaticalStrategy {
+private:
+    std::vector<MessageSPDM> StoredResponses;
+
 public:
     BacktrackStrategy(Observer *Logger);
 
@@ -50,8 +58,12 @@ public:
 };
 
 class CheckpointStrategy : public GrammaticalStrategy {
+private:
+    u8 Checkpoint;
+    u8 CurrentCheckpoint;
+
 public:
-    CheckpointStrategy(Observer *Logger);
+    CheckpointStrategy(Observer *Logger, u8 Checkpoint);
 
     virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
