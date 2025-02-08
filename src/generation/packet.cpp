@@ -199,7 +199,6 @@ int Algorithms::SerializePacket(u8 *Buffer)
     for (u8 i = 37 + (ExtAsymCount + ExtHashCount) * 4 ; i < Size ; i++) {
         Buffer[i] = Randomize(0, UINT8_MAX);
     }
-    std::cout << "test" << std::endl;
 
     return Size;
 }
