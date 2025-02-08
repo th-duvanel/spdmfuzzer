@@ -13,7 +13,7 @@ FuzzStrategy::FuzzStrategy(Observer *Logger) : Logger(Logger) {
 }
 
 bool FuzzStrategy::CheckRequest(MessageSPDM *request, MessageSPDM *response)
-{
+{   
     if (RequestToResponseCode.find(request->getCode()) == RequestToResponseCode.end()) {
         response->Buffer = MockedPackets[0].data();
         response->Size = MockedPackets[0].size();
@@ -31,7 +31,8 @@ bool MockedStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
     }
 
     u8 response_code = RequestToResponseCode[request->getCode()];
-    Logger->onResponse(*request, 0);
+    Logger->onResponse(*response, 0);   // Older response (to other request)
+    Logger->onResponse(*request, 0);    // Received request
 
     response->Command = ntohl(request->Command);
     response->TransportType = ntohl(request->TransportType);
@@ -66,7 +67,8 @@ bool RandomStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
     response->TransportType = ntohl(request->TransportType);
 
     u8 response_code = RequestToResponseCode[request->getCode()];
-    Logger->onResponse(*request, 1);
+    Logger->onResponse(*response, 1);   // Older response (to other request)
+    Logger->onResponse(*request, 1);    // Received request
 
     // Sends Server Hello
     if (response_code == 0x72) {
@@ -90,7 +92,7 @@ bool RandomStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
         Factory->CreatePacket(response_code, 1, response);
     }
 
-    return response;
+    return response;    // New response
 }
 
 bool GrammaticalStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *response)
@@ -102,7 +104,8 @@ bool GrammaticalStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *re
     response->TransportType = ntohl(request->TransportType);
 
     u8 response_code = RequestToResponseCode[request->getCode()];
-    Logger->onResponse(*request, 1);
+    Logger->onResponse(*response, 3);   // Older response (to other request)
+    Logger->onResponse(*request, 3);    // Received request
 
     // Sends Server Hello
     if (response_code == 0x72) {
@@ -138,7 +141,8 @@ bool SizedStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *response
     response->TransportType = ntohl(request->TransportType);
 
     u8 response_code = RequestToResponseCode[request->getCode()];
-    Logger->onResponse(*request, 1);
+    Logger->onResponse(*response, 1);   // Older response (to other request)
+    Logger->onResponse(*request, 1);    // Received request
 
     // Sends Server Hello
     if (response_code == 0x72) {
@@ -178,7 +182,8 @@ bool BacktrackStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *resp
     if (!foundMessage) {
         // If is not, adds to the vector and warns the user.
         StoredResponses.push_back(*response);
-        Logger->onResponse(*request, 1);
+        Logger->onResponse(*response, 1);   // Older response (to other request)
+        Logger->onResponse(*request, 1);    // Received request
     }
 
     u8 response_code = RequestToResponseCode[request->getCode()];
@@ -244,7 +249,8 @@ bool CheckpointStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *res
         }
     }
     else {
-        Logger->onResponse(*request, 1);
+        Logger->onResponse(*response, 1);   // Older response (to other request)
+        Logger->onResponse(*request, 1);    // Received request
         Factory->CreatePacket(response_code, 1, response);
     }
 
