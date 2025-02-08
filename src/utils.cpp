@@ -12,10 +12,12 @@ std::map<u8, u8> RequestToResponseCode = {
 
 MessageSPDM::MessageSPDM(u64 Size)
 {
+    this->Size = 0;
     Buffer = new u8[Size];
 }
 
 u8 MessageSPDM::getCode() const {
+    if (Size < 3) return 0;
     return Buffer[2];
 }
 
