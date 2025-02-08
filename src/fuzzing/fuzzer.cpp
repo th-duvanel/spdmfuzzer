@@ -54,6 +54,7 @@ void Fuzzer::Round()
             break;
         }
     }
+    Response->Size = 0;
 }
 
 void Fuzzer::Run()
