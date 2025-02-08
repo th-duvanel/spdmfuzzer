@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -g -Wall
+CPPFLAGS = -g -Wall -std=c++17
 
 OBJDIR = src
 HEDDIR = include
