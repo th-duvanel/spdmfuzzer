@@ -116,7 +116,8 @@ SocketTCP::WriteResponder(MessageSPDM *Message)
         Logger->onEvent("IO/TCP", "Size write failed.");
         return false;
     }
-    if (Message->Size && write(RequesterSocket, Message->Buffer, ntohl(Message->Size)) <= 0) {
+    Message->Size = ntohl(Message->Size);
+    if (Message->Size && write(RequesterSocket, Message->Buffer, Message->Size) <= 0) {
         Logger->onEvent("IO/TCP", "Buffer write failed.");
         return false;
     }
