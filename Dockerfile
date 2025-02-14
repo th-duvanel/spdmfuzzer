@@ -20,4 +20,4 @@ RUN git checkout containerized-fuzzer
 RUN chmod +x compile.sh
 RUN ./compile.sh
 
-ENTRYPOINT ["sh", "-c", "./spdmfuzzer -f 1 > /home/spdmfuzzer/output.txt 2>&1"]
+RUN ./spdmfuzzer -f 1 > /home/spdmfuzzer/output.txt 2>&1
