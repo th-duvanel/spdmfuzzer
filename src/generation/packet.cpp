@@ -128,16 +128,16 @@ Algorithms::Algorithms(u8 fuzzStrategy) : SPDMPacket(0x63, fuzzStrategy)
     }
     if (FuzzStrategy != 3) {
         MeasSpecificationSelected = Randomize(0, UINT8_MAX);
-        BaseAsymmetricSelected = Randomize(0, UINT32_MAX);
-        MeasHashAlgorithms = Randomize(0, UINT32_MAX);
-        BaseHashSelected = Randomize(0, UINT32_MAX);
+        BaseAsymmetricSelected = Randomize(0, UINT16_MAX);
+        MeasHashAlgorithms = Randomize(0, UINT16_MAX);
+        BaseHashSelected = Randomize(0, UINT16_MAX);
 
         ExtAsymCount = Randomize(0, 2);
         ExtHashCount = Randomize(0, 2);
     }
     else {
         MeasSpecificationSelected = 1 << Randomize(0, 7);
-        MeasHashAlgorithms = Randomize(0, 127);
+        MeasHashAlgorithms = 1 << Randomize(0, 31);
         BaseAsymmetricSelected = 1 << Randomize(0, 31);
         BaseHashSelected = 1 << Randomize(0, 31);
 
