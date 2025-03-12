@@ -37,7 +37,7 @@ Now you can choose one of the paths described above.
 
 If installing libraries and dependencies is not an issue for you, feel free to install locally on your machine. There is no need to execute anything with elevated privileges; simply grant execution permission to the bash script.
 
-It will run and check some dependencies on your system (not many), list them, and prompt for installation. To avoid the need to run sudo with a script, it does not install automatically. If you prefer not to run the script, below are the necessary dependencies and their versions.
+It will run and check some dependencies on your system (not many), list them, and prompt for installation. To avoid the need to run sudo with a script, it does not install automatically. For double-check, below are the dependencies used in the program.
 
 You do not need to follow the specific version used. Preferably, use the latest version available in your system's package manager or use the automated tutorial in a container.
 
@@ -57,19 +57,23 @@ psmisc
 
 To do this, simply execute in the current folder:
 ```console
-foo@spdmfuzzer:~$ sudo +x compile.sh
+foo@spdmfuzzer:~$ chmod +x compile.sh
 
 foo@spdmfuzzer:~$ ./compile.sh
 ```
 
 If you want to monitor message exchange, start your preferred sniffer now (preferably with spdm-wid).
 
-To execute, simply:
+To execute with the default configuration, simply:
 ```console
 foo@spdmfuzzer:~$ ./spdmfuzzer
 ```
-
-All necessary information for understanding will be displayed in your terminal.
+To change configurations, try:
+```console
+foo@spdmfuzzer:~$ ./spdmfuzzer -h
+```
+All necessary information for understanding will be displayed in your terminal. If you want to understand better the "fuzzing levels",
+please, check spdmfuzzer/doc/FUZZING.md.
 
 ### Automatically compile in Docker container
 
@@ -83,27 +87,40 @@ foo@spdmfuzzer:~$ docker build -t spdmfuzzer .      # build
 foo@spdmfuzzer:~$ docker run -ti spdmfuzzer         # execution
 ```
 
-The fuzzer will run automatically and will not stop until you press ctrl + c. After pressing both keys, the container will close. In the container files, there will be a .pcapng collected with all the exchanged packets. To retrieve it, simply:
+By default, the fuzzer will run in a screen session, called spdmfuzzer_session. It will run in the fuzzing mode 3, which can be found explanation in the /doc/FUZZING.md file. If you want to change the fuzzing mode, first you find the docker container id with
 
 ```console
-foo@spdmfuzzer:~$ docker ps -a   # para capturar o id do contêiner
+foo@spdmfuzzer:~$ docker ps -a   # to capture the container id
 container ID        IMAGE        NAMES      ...
 <container-id>      spdmfuzzer   <name>     ...
+```
 
-foo@spdmfuzzer:~$ docker cp <container-id>:/home/spdmfuzzer/spdmfuzzer.pcapng .     # copiar o .pcapng na pasta atual
+```console
+foo@spdmfuzzer:~$ docker exec -it <container-id> /bin/bash
+```
+This way, will you have access to the container's terminal, which you can run any command you want. This way, you can follow the steps below, like you're running on your local machine.
+
+Besides all this, you can copy the .pcapng file after you end the container execution, which will end the fuzzer execution too.
+
+```console
+foo@spdmfuzzer:~$ docker cp <container-id>:/home/spdmfuzzer/spdmfuzzer.pcapng .     # copies the .pcapng in the actual folder
 ```
 
 By applying this .pcapng in Wireshark, you will have a complete view of the packet exchange. It is recommended again to use spdm-wid and the packet filter listed above for better visualization.
 
 ## Execution (help)
 
+
+
 ```console
-foo@spdmfuzzer:~$ ./spdmfuzzer
 # [*] => Fuzzer started the round.
 # [+] => Requester started in the background.
 # [IO/TCP] => Requester connected. Unexpected requests:
-# [1] => GET_CAPABILITIES
-# [1] => NEGOTIATE_ALGORITHMS
+# [3] => GET_VERSION: 05 10 84 00 00
+# [3] => VERSION: 05 75 04 6b 67 96 02 12 59 e0 ee
+# [3] => GET_CAPABILITIES: 05 10 e1 00 00
+# [3] => CAPABILITIES: 05 cb 61 30 20 2e 0c 42 e6 2c ee 00 80
+# [3] => NEGOTIATE_ALGORITHMS: 05 10 e3 00 00 20 00 01 00 10 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 # [IO/TCP] => Requester disconnected.
 # [-] => Fuzzer finished the round.
 ```

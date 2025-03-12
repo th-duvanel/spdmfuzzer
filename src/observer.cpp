@@ -30,7 +30,7 @@ void ConsoleLogger::onResponse(MessageSPDM &Message, u8 fuzzStrategy)
     int msgCode = Message.getCode();
     if (msgCode == 0 || msgCode == 0x84 || msgCode == 0x04 || 
         msgCode == 0xE1 || msgCode == 0x61 || msgCode == 0xE3 || 
-        msgCode == 0x02) return;
+        msgCode == 0x02 || msgCode == 0x01 || msgCode == 0x81 || msgCode == 0x83) return;
 
     if (Message.Command == 2917007360) return;
     
