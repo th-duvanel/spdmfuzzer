@@ -5,6 +5,7 @@
 int PORT = 2323;
 int FUZZ_LEVEL = 0;
 int MAX = 2048;
+int EXTRA = 3;
 bool VERBOSE = false;
 
 void help()
@@ -38,6 +39,11 @@ void checkArgs(int argc, char** argv)
         else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--fuzz") == 0) {
             if (i + 1 < argc) FUZZ_LEVEL = std::stoi(argv[++i]);
             else FuzzerError("--fuzz requires a value", 1);
+
+            if (FUZZ_LEVEL == 5) {
+                if (i + 1 < argc) EXTRA = std::stoi(argv[++i]);
+                else FuzzerError("--fuzz 5 requires a value", 1);
+            }
         }
         else if (strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--len") == 0) {
             if (i + 1 < argc) MAX = std::stoi(argv[++i]);
@@ -53,7 +59,7 @@ int main(int argc, char *argv[])
 
     checkArgs(argc, argv);
 
-    fuzzer = new Fuzzer(PORT, FUZZ_LEVEL, MAX, VERBOSE);
+    fuzzer = new Fuzzer(PORT, FUZZ_LEVEL, MAX, VERBOSE, EXTRA);
 
     fuzzer->Run();
 
