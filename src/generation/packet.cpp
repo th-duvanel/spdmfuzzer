@@ -239,8 +239,9 @@ int* Algorithms::GetSelectedAlgorithms()
 Digests::Digests(u8 fuzzStrategy, u8 H_HashSize) : SPDMPacket(0x01, fuzzStrategy)
 {
     u8 digests_quantity = Randomize(0, 8);
+    Param2 = 0;
 
-    for (u8 i = 0, Param2 = 0 ; i < digests_quantity ; i++) {
+    for (u8 i = 0 ; i < digests_quantity ; i++) {
         Param2 |= (1 << (7 - i));
     }
 
@@ -257,8 +258,10 @@ Digests::Digests(u8 fuzzStrategy, u8 H_HashSize) : SPDMPacket(0x01, fuzzStrategy
 
 int Digests::SerializePacket(u8 *Buffer)
 {
+    u8 hash_size;
     u8 digests_quantity = std::bitset<8>(Param2).count();
-    u8 hash_size = Size / digests_quantity;
+
+    if (digests_quantity != 0) hash_size = (Size - 5) / digests_quantity;
 
     if (FuzzStrategy == 2) {
         Size += Randomize(0, UINT8_MAX);
@@ -270,12 +273,14 @@ int Digests::SerializePacket(u8 *Buffer)
         for (u8 j = 0 ; j < hash_size ; j++) {
             Buffer[5 + (i * hash_size) + j] = DigestsBuffer[i][j];
         }
+        delete[] DigestsBuffer[i];
     }
 
-    for (u8 i = digests_quantity ; i < Size ; i++) {
+    for (u16 i = digests_quantity ; i < Size ; i++) {
         Buffer[5 + i] = Randomize(0, UINT8_MAX);
     }
-
+    
+    delete[] DigestsBuffer;
     return Size;
 }
 
@@ -300,10 +305,11 @@ ChallengeAuth::ChallengeAuth(u8 fuzzStrategy, u8 H_HashSize, u8 S_SignatureSize)
 {
     Param1 |= 1 << Randomize(0, 7);
     Param2 = Randomize(0, UINT8_MAX);
-    OpaqueLength = Randomize(0, UINT16_MAX);
+    OpaqueLength = Randomize(0, 480);
     OpaqueData = new u8[OpaqueLength];
 
     CertificateChainHash = new u8[H_HashSize];
+    MeasSummaryHash = new u8[H_HashSize];
 
     for (u8 i = 0 ; i < H_HashSize ; i++) {
         CertificateChainHash[i] = Randomize(0, UINT8_MAX);
@@ -314,12 +320,12 @@ ChallengeAuth::ChallengeAuth(u8 fuzzStrategy, u8 H_HashSize, u8 S_SignatureSize)
         Nonce[i] = Randomize(0, UINT8_MAX);
     }
 
-    for (u8 i = 0 ; i < OpaqueLength ; i++) {
+    for (u16 i = 0 ; i < OpaqueLength ; i++) {
         OpaqueData[i] = Randomize(0, UINT8_MAX);
     }
 
     Signature = new u8[S_SignatureSize];
-    for (u8 i = 0 ; i < S_SignatureSize ; i++) {
+    for (u16 i = 0 ; i < S_SignatureSize ; i++) {
         Signature[i] = Randomize(0, UINT8_MAX);
     }
 
@@ -346,7 +352,7 @@ int ChallengeAuth::SerializePacket(u8 *Buffer)
         Buffer[37 + hash_size + i] = Nonce[i];
     }
 
-    for (u8 i = 0 ; i < OpaqueLength ; i++) {
+    for (u16 i = 0 ; i < OpaqueLength ; i++) {
         Buffer[69 + hash_size + i] = OpaqueData[i];
     }
 
@@ -354,7 +360,7 @@ int ChallengeAuth::SerializePacket(u8 *Buffer)
         Buffer[69 + hash_size + OpaqueLength + i] = Signature[i];
     }
 
-    for (u8 i = 69 + hash_size + OpaqueLength + S_SignatureSize ; i < Size ; i++) {
+    for (u16 i = 69 + hash_size + OpaqueLength + S_SignatureSize ; i < Size ; i++) {
         Buffer[i] = Randomize(0, UINT8_MAX);
     }
 
