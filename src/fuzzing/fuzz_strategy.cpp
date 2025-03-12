@@ -3,9 +3,9 @@
 MockedStrategy::MockedStrategy(Observer *Logger) : FuzzStrategy(Logger) {}
 RandomStrategy::RandomStrategy(Observer *Logger) : FuzzStrategy(Logger) {}
 GrammaticalStrategy::GrammaticalStrategy(Observer *Logger) : FuzzStrategy(Logger) {}
-SizedStrategy::SizedStrategy(Observer *Logger) : GrammaticalStrategy(Logger) {}
-BacktrackStrategy::BacktrackStrategy(Observer *Logger) : GrammaticalStrategy(Logger) {}
-CheckpointStrategy::CheckpointStrategy(Observer *Logger, u8 Checkpoint) : GrammaticalStrategy(Logger) { this->Checkpoint = Checkpoint; }
+SizedStrategy::SizedStrategy(Observer *Logger) : FuzzStrategy(Logger) {}
+BacktrackStrategy::BacktrackStrategy(Observer *Logger) : FuzzStrategy(Logger) {}
+CheckpointStrategy::CheckpointStrategy(Observer *Logger, u8 Checkpoint) : FuzzStrategy(Logger) { this->Checkpoint = Checkpoint; }
 
 FuzzStrategy::FuzzStrategy(Observer *Logger) : Logger(Logger) {
     Factory = new PacketFactory();
@@ -34,9 +34,6 @@ bool MockedStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
     Logger->onResponse(*response, 0);   // Older response (to other request)
     Logger->onResponse(*request, 0);    // Received request
 
-    response->Command = ntohl(request->Command);
-    response->TransportType = ntohl(request->TransportType);
-
     if (response_code == 0x02) {
         // Checks certificate sent
         if (certifiedSent) {
@@ -54,7 +51,8 @@ bool MockedStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
         response->Buffer = MockedPackets[response_code].data();
         response->Size = MockedPackets[response_code].size();
     }
-
+    response->Command = ntohl(request->Command);
+    response->TransportType = ntohl(request->TransportType);
     return response;
 }
 
@@ -63,8 +61,6 @@ bool RandomStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
     if (!CheckRequest(request, response)) {
         return false;
     }
-    response->Command = ntohl(request->Command);
-    response->TransportType = ntohl(request->TransportType);
 
     u8 response_code = RequestToResponseCode[request->getCode()];
     Logger->onResponse(*response, 1);   // Older response (to other request)
@@ -72,18 +68,18 @@ bool RandomStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
 
     // Sends Server Hello
     if (response_code == 0x72) {
-        response->Buffer = MockedPackets[response_code].data();
-        response->Size = MockedPackets[response_code].size();
+        memcpy(response->Buffer, MockedPackets[0x72].data(), MockedPackets[0x72].size());
+        response->Size = MockedPackets[0x72].size();
     }
     else if (response_code == 0x02) {
         // Checks certificate sent
         if (certifiedSent) {
-            response->Buffer = mockedCertificate2.data();
+            memcpy(response->Buffer, mockedCertificate2.data(), mockedCertificate2.size());
             response->Size = mockedCertificate2.size();
             certifiedSent = false;
         }
         else {
-            response->Buffer = mockedCertificate1.data();
+            memcpy(response->Buffer, mockedCertificate1.data(), mockedCertificate1.size());
             response->Size = mockedCertificate1.size();
             certifiedSent = true;
         }
@@ -92,7 +88,9 @@ bool RandomStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *respons
         Factory->CreatePacket(response_code, 1, response);
     }
 
-    return response;    // New response
+    response->Command = ntohl(request->Command);
+    response->TransportType = ntohl(request->TransportType);
+    return response;
 }
 
 bool GrammaticalStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *response)
@@ -100,8 +98,6 @@ bool GrammaticalStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *re
     if (!CheckRequest(request, response)) {
         return false;
     }
-    response->Command = ntohl(request->Command);
-    response->TransportType = ntohl(request->TransportType);
 
     u8 response_code = RequestToResponseCode[request->getCode()];
     Logger->onResponse(*response, 3);   // Older response (to other request)
@@ -109,18 +105,18 @@ bool GrammaticalStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *re
 
     // Sends Server Hello
     if (response_code == 0x72) {
-        response->Buffer = MockedPackets[response_code].data();
-        response->Size = MockedPackets[response_code].size();
+        memcpy(response->Buffer, MockedPackets[0x72].data(), MockedPackets[0x72].size());
+        response->Size = MockedPackets[0x72].size();
     }
     else if (response_code == 0x02) {
         // Checks certificate sent
         if (certifiedSent) {
-            response->Buffer = mockedCertificate2.data();
+            memcpy(response->Buffer, mockedCertificate2.data(), mockedCertificate2.size());
             response->Size = mockedCertificate2.size();
             certifiedSent = false;
         }
         else {
-            response->Buffer = mockedCertificate1.data();
+            memcpy(response->Buffer, mockedCertificate1.data(), mockedCertificate1.size());
             response->Size = mockedCertificate1.size();
             certifiedSent = true;
         }
@@ -129,6 +125,8 @@ bool GrammaticalStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *re
         Factory->CreatePacket(response_code, 3, response);
     }
 
+    response->Command = ntohl(request->Command);
+    response->TransportType = ntohl(request->TransportType);
     return response;
 }
 
@@ -137,8 +135,6 @@ bool SizedStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *response
     if (!CheckRequest(request, response)) {
         return false;
     }
-    response->Command = ntohl(request->Command);
-    response->TransportType = ntohl(request->TransportType);
 
     u8 response_code = RequestToResponseCode[request->getCode()];
     Logger->onResponse(*response, 1);   // Older response (to other request)
@@ -146,18 +142,18 @@ bool SizedStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *response
 
     // Sends Server Hello
     if (response_code == 0x72) {
-        response->Buffer = MockedPackets[response_code].data();
-        response->Size = MockedPackets[response_code].size();
+        memcpy(response->Buffer, MockedPackets[0x72].data(), MockedPackets[0x72].size());
+        response->Size = MockedPackets[0x72].size();
     }
     else if (response_code == 0x02) {
         // Checks certificate sent
         if (certifiedSent) {
-            response->Buffer = mockedCertificate2.data();
+            memcpy(response->Buffer, mockedCertificate2.data(), mockedCertificate2.size());
             response->Size = mockedCertificate2.size();
             certifiedSent = false;
         }
         else {
-            response->Buffer = mockedCertificate1.data();
+            memcpy(response->Buffer, mockedCertificate1.data(), mockedCertificate1.size());
             response->Size = mockedCertificate1.size();
             certifiedSent = true;
         }
@@ -165,7 +161,8 @@ bool SizedStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *response
     else {
         Factory->CreatePacket(response_code, 2, response);
     }
-
+    response->Command = ntohl(request->Command);
+    response->TransportType = ntohl(request->TransportType);
     return response;
 }
 
@@ -182,8 +179,8 @@ bool BacktrackStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *resp
     if (!foundMessage) {
         // If is not, adds to the vector and warns the user.
         StoredResponses.push_back(*response);
-        Logger->onResponse(*response, 1);   // Older response (to other request)
-        Logger->onResponse(*request, 1);    // Received request
+        Logger->onResponse(*response, 4);   // Older response (to other request)
+        Logger->onResponse(*request, 4);    // Received request
     }
 
     u8 response_code = RequestToResponseCode[request->getCode()];
@@ -195,24 +192,26 @@ bool BacktrackStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *resp
         if (response_code == 0x02) {
             // Checks certificate sent
             if (certifiedSent) {
-                response->Buffer = mockedCertificate2.data();
+                memcpy(response->Buffer, mockedCertificate2.data(), mockedCertificate2.size());
                 response->Size = mockedCertificate2.size();
                 certifiedSent = false;
             }
             else {
-                response->Buffer = mockedCertificate1.data();
+                memcpy(response->Buffer, mockedCertificate1.data(), mockedCertificate1.size());
                 response->Size = mockedCertificate1.size();
                 certifiedSent = true;
             }
         }
         else {
-            Factory->CreatePacket(response_code, 1, response);
+            Factory->CreatePacket(response_code, 3, response);
         }
     }
     else {
-        response = foundMessage;
+        memcpy(response->Buffer, foundMessage->Buffer, foundMessage->Size);
+        response->Size = foundMessage->Size;
     }
-
+    response->Command = ntohl(request->Command);
+    response->TransportType = ntohl(request->TransportType);
     return response;
 }
 
@@ -221,38 +220,38 @@ bool CheckpointStrategy::InterpretRequest(MessageSPDM *request, MessageSPDM *res
     if (!CheckRequest(request, response)) {
         return false;
     }
-    response->Command = ntohl(request->Command);
-    response->TransportType = ntohl(request->TransportType);
 
     u8 response_code = RequestToResponseCode[request->getCode()];
 
     if (response_code == 0x04) {
-        // Restarts the checkpoint counter in GET_VERSION response
+        // Restarts the checkpoint counter in GET_VERSION request
         CurrentCheckpoint = Checkpoint;
     }
 
-    if (response_code == 0x72 || CurrentCheckpoint--) {
-        response->Buffer = MockedPackets[response_code].data();
+    if (response_code == 0x72 || CurrentCheckpoint-- > 0) {
+        memcpy(response->Buffer, MockedPackets[response_code].data(), MockedPackets[response_code].size());
         response->Size = MockedPackets[response_code].size();
     }
     else if (response_code == 0x02) {
         // Checks certificate sent
         if (certifiedSent) {
-            response->Buffer = mockedCertificate2.data();
+            memcpy(response->Buffer, mockedCertificate2.data(), mockedCertificate2.size());
             response->Size = mockedCertificate2.size();
             certifiedSent = false;
         }
         else {
-            response->Buffer = mockedCertificate1.data();
+            memcpy(response->Buffer, mockedCertificate1.data(), mockedCertificate1.size());
             response->Size = mockedCertificate1.size();
             certifiedSent = true;
         }
     }
     else {
-        Logger->onResponse(*response, 1);   // Older response (to other request)
-        Logger->onResponse(*request, 1);    // Received request
-        Factory->CreatePacket(response_code, 1, response);
+        Logger->onResponse(*response, 5);   // Older response (to other request)
+        Logger->onResponse(*request, 5);    // Received request
+        Factory->CreatePacket(response_code, 3, response);
     }
+    response->Command = ntohl(request->Command);
+    response->TransportType = ntohl(request->TransportType);
 
     return response;
 }

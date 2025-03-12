@@ -40,14 +40,14 @@ public:
     virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
-class SizedStrategy : public GrammaticalStrategy {
+class SizedStrategy : public FuzzStrategy {
 public:
     SizedStrategy(Observer *Logger);
 
     virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
-class BacktrackStrategy : public GrammaticalStrategy {
+class BacktrackStrategy : public FuzzStrategy {
 private:
     std::vector<MessageSPDM> StoredResponses;
 
@@ -57,10 +57,10 @@ public:
     virtual bool InterpretRequest(MessageSPDM *request, MessageSPDM *response) override;
 };
 
-class CheckpointStrategy : public GrammaticalStrategy {
+class CheckpointStrategy : public FuzzStrategy {
 private:
-    u8 Checkpoint;
-    u8 CurrentCheckpoint;
+    int8_t Checkpoint;
+    int8_t CurrentCheckpoint;
 
 public:
     CheckpointStrategy(Observer *Logger, u8 Checkpoint);
