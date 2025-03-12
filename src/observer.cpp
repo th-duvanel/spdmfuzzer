@@ -28,8 +28,10 @@ ConsoleLogger::ConsoleLogger(bool verbose) : verbose(verbose) {}
 void ConsoleLogger::onResponse(MessageSPDM &Message, u8 fuzzStrategy)
 {
     int msgCode = Message.getCode();
-    // Removes CAPABILITIES AND GET_CAPABILITIES, VERSION, GET_VERSION
-    if (msgCode == 0 || msgCode == 0x84 || msgCode == 0x04 || msgCode == 0xE1 || msgCode == 0x61 || msgCode == 0xE3) return;
+    if (msgCode == 0 || msgCode == 0x84 || msgCode == 0x04 || 
+        msgCode == 0xE1 || msgCode == 0x61 || msgCode == 0xE3 || 
+        msgCode == 0x02) return;
+
     if (Message.Command == 2917007360) return;
     
     std::cout << "# [" << (int)fuzzStrategy << "] => " << ResponseRequestCode[Message.getCode()];
