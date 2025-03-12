@@ -10,5 +10,7 @@ private:
     u8 S_SignatureSize;
     
 public:
+    PacketFactory();
+
     void CreatePacket(u8 Code, u8 fuzzStrategy, MessageSPDM *response);
 };

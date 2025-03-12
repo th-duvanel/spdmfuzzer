@@ -1,5 +1,12 @@
 #include "../../include/generation/packet_factory.hpp"
 
+PacketFactory::PacketFactory()
+{
+    M_MeasurementsSize = 48;
+    H_HashSize = 32;
+    S_SignatureSize = 32;
+}
+
 void PacketFactory::CreatePacket(u8 Code, u8 fuzzStrategy, MessageSPDM *response)
 {
     SPDMPacket *packet;
